@@ -156,6 +156,24 @@ namespace TSP
         #region Private Methods
 
         /// <summary>
+        /// Finds the distance between two points
+        /// </summary>
+        private double distance(PointF from, PointF to)
+        {
+            return Math.Sqrt(Math.Pow(to.X - from.X, 2) + Math.Pow(to.Y - from.Y, 2));
+        }
+
+        /// <summary>
+        /// Finds the angle(theta) between two points
+        /// </summary>
+        private double angle(PointF origin, PointF to)
+        {
+            float xDiff = origin.X - to.X;
+            float yDiff = origin.y - to.Y;
+            return (double)Math.Atan2(yDiff, xDiff) * (double)(180 / Math.PI);
+        }
+
+        /// <summary>
         /// Reset the problem instance.
         /// </summary>
         private void resetData()
