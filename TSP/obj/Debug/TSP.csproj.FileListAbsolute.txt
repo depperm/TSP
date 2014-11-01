@@ -30,3 +30,11 @@ C:\Users\Epper Marshall\Downloads\TSPBranchAndBound\TSP\obj\Debug\TSP.csprojReso
 C:\Users\Epper Marshall\Downloads\TSPBranchAndBound\TSP\obj\Debug\TSP.mainform.resources
 C:\Users\Epper Marshall\Downloads\TSPBranchAndBound\TSP\obj\Debug\TSP.Properties.Resources.resources
 C:\Users\Epper Marshall\Downloads\TSPBranchAndBound\TSP\obj\Debug\TSP.csproj.GenerateResource.Cache
+C:\code\TSP\TSP\bin\Debug\TSP.exe
+C:\code\TSP\TSP\bin\Debug\TSP.pdb
+C:\code\TSP\TSP\obj\Debug\TSP.csprojResolveAssemblyReference.cache
+C:\code\TSP\TSP\obj\Debug\TSP.mainform.resources
+C:\code\TSP\TSP\obj\Debug\TSP.Properties.Resources.resources
+C:\code\TSP\TSP\obj\Debug\TSP.csproj.GenerateResource.Cache
+C:\code\TSP\TSP\obj\Debug\TSP.exe
+C:\code\TSP\TSP\obj\Debug\TSP.pdb
