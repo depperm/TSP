@@ -325,6 +325,7 @@ namespace TSP
             Program.MainForm.Invalidate();
 
         }
+
         ///random
         public void solveRandomProblem()
         {
@@ -355,6 +356,75 @@ namespace TSP
             // do a refresh. 
             Program.MainForm.Invalidate();
 
+        }
+
+        // greedy solver
+        public void greedySolve()
+        {
+            int initial = 0;
+            bool pathNotFound = true;
+            HashSet<int> visited = new HashSet<int>();
+
+            // loop through initial starting nodes for greedy path
+            // until one of them finishes visiting all cities 
+            // without hitting a dead end
+            while (pathNotFound)
+            {
+                pathNotFound = false;
+                Route = new ArrayList();
+                City cursor = Cities[initial];
+                Route.Add(Cities[initial]);
+                visited.Add(initial);
+
+                // starting with city at index `initial`
+                // go to the nearest city and repeat
+                // untill all cities have been visited
+                while (visited.Count != Cities.Length)
+                {
+                    double dist = Double.PositiveInfinity;
+                    int bestNeighbor = -1;
+
+                    for (int i = 0; i < Cities.Length; i++)
+                    {
+                        if (!visited.Contains(i))
+                        {
+                            if (cursor.costToGetTo(Cities[i]) < dist)
+                            {
+                                dist = cursor.costToGetTo(Cities[i]);
+                                bestNeighbor = i;
+                            }
+                        }
+                    }
+
+                    if (bestNeighbor == -1)
+                    {
+                        // no path available
+                        // break and try a different start node
+                        // (class spec says no backtracking)
+                        pathNotFound = true;
+                        break;
+                    }
+                    else
+                    {
+                        // found closest neighbor, go there
+                        visited.Add(bestNeighbor);
+                        Route.Add(Cities[bestNeighbor]);
+                        cursor = Cities[bestNeighbor];
+                    }
+
+                }
+
+                // if the last path failed to find all cities...
+                // ...start wiht a different initial city
+                initial++;
+            }
+
+            // assign as best solution so far
+            bssf = new TSPSolution(Route);
+            // update the cost of the tour. 
+            Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            // do a refresh. 
+            Program.MainForm.Invalidate();
         }
         #endregion
     }
