@@ -612,6 +612,7 @@ namespace TSP
         /// </summary>
         public void solveBBProblem()
         {
+         
             /// Get our timer and stopwatch ready
             bool intervalExceeded = false;
             Timer timer = new Timer(10 * 60 * 1000); //Minutes * 60 Seconds * 1000 Milliseconds
@@ -659,7 +660,7 @@ namespace TSP
                         validRoute = false;
                 }
 
-                if (Double.IsInfinity(((City)Route[0]).costToGetTo((City)Route[randomCities.Count - 1])))
+                if (Double.IsInfinity(((City)Route[0]).costToGetTo((City)Route[Route.Count - 1])))
                     validRoute = false;
 
                 if (!validRoute)

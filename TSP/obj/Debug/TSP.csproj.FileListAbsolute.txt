@@ -38,3 +38,11 @@ C:\code\TSP\TSP\obj\Debug\TSP.Properties.Resources.resources
 C:\code\TSP\TSP\obj\Debug\TSP.csproj.GenerateResource.Cache
 C:\code\TSP\TSP\obj\Debug\TSP.exe
 C:\code\TSP\TSP\obj\Debug\TSP.pdb
+C:\Users\Sean\Source\Repos\TSP\TSP\bin\Debug\TSP.exe
+C:\Users\Sean\Source\Repos\TSP\TSP\bin\Debug\TSP.pdb
+C:\Users\Sean\Source\Repos\TSP\TSP\obj\Debug\TSP.csprojResolveAssemblyReference.cache
+C:\Users\Sean\Source\Repos\TSP\TSP\obj\Debug\TSP.mainform.resources
+C:\Users\Sean\Source\Repos\TSP\TSP\obj\Debug\TSP.Properties.Resources.resources
+C:\Users\Sean\Source\Repos\TSP\TSP\obj\Debug\TSP.csproj.GenerateResource.Cache
+C:\Users\Sean\Source\Repos\TSP\TSP\obj\Debug\TSP.exe
+C:\Users\Sean\Source\Repos\TSP\TSP\obj\Debug\TSP.pdb
