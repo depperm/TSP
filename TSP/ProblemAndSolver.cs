@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Drawing;
+using System.Timers;
 
 namespace TSP
 {
@@ -426,6 +427,421 @@ namespace TSP
             // do a refresh. 
             Program.MainForm.Invalidate();
         }
+        #endregion
+
+        #region Branch & Bound
+        /// I didn't give B&B it's own region to be narcisisstic, it just 
+        /// kind of got big on me
+
+
+        /// <summary>
+        /// Row reduce the given matrix in the partial state
+        /// </summary>
+        private PartialState reduce(PartialState stateIn)
+        {
+            double lowerBound = stateIn.LowerBound;
+            double[,] matrix = stateIn.Matrix;
+            int size = matrix.GetLength(0);
+            for (int i = 0; i < size; i++)
+            {
+                /// If we have already left this edge, then we don't need to reduce
+                /// the row because it has already been set to infinity
+                if (stateIn.Edges.Exists(x => x.Item1 == i))
+                    continue;
+
+                /// Get the lowest value in the row
+                double lowestRowValue = Double.PositiveInfinity;
+                for (int j = 0; j < size; j++)
+                {
+                    if (matrix[i, j] < lowestRowValue)
+                        lowestRowValue = matrix[i, j];
+                }
+
+                /// If that value is not zero and is not infinite, then we need to reduce the row
+                if (lowestRowValue != 0 && !Double.IsInfinity(lowestRowValue))
+                {
+                    for (int j = 0; j < size; j++)
+                        matrix[i, j] = matrix[i, j] - lowestRowValue;
+                }
+
+                /// Add the lowest row value to the lower bound before going to
+                /// the next row
+                lowerBound += lowestRowValue;
+            }
+
+            /// Now we just need to reduce the columns and we will have a
+            /// reduced cost martrix
+            for (int j = 0; j < size; j++)
+            {
+                /// If we have already entered this edge, then
+                if (stateIn.Edges.Exists(x => x.Item2 == j))
+                    continue;
+
+                /// Find the lowest value
+                double lowestColValue = Double.PositiveInfinity;
+                for (int i = 0; i < size; i++)
+                {
+                    if (matrix[i, j] < lowestColValue)
+                        lowestColValue = matrix[i, j];
+                }
+
+                /// If that value is not zero and is not infinite, then we need to reduce the column
+                if (lowestColValue != 0 && !Double.IsInfinity(lowestColValue))
+                {
+                    for (int i = 0; i < size; i++)
+                        matrix[i, j] = matrix[i, j] - lowestColValue;
+                }
+
+                /// Add that value to the lower bound of this state
+                lowerBound += lowestColValue;
+            }
+            return new PartialState(matrix, lowerBound, stateIn.Edges);
+        }
+
+        private PartialState includeEdgeState(PartialState state, Tuple<int, int> edgeToInclude)
+        {
+            /// We need to make a copy of the partial state.
+            PartialState includeState = new PartialState(
+                (double[,])state.Matrix.Clone(),
+                state.LowerBound,
+                new List<Tuple<int, int>>(state.Edges));
+
+            /// Set the inverse position to infinity to not allow backtracking there.
+            includeState.Matrix[edgeToInclude.Item2, edgeToInclude.Item1] = Double.PositiveInfinity;
+
+            /// Set the values for the entire column of the destination to infinity so there are no cycles
+            int size = includeState.Matrix.GetLength(0);
+            for (int i = 0; i < size; i++)
+                includeState.Matrix[i, edgeToInclude.Item2] = Double.PositiveInfinity;
+
+            /// Set the values for the entire row of the origin to infinity so there are no cycles
+            for (int j = 0; j < size; j++)
+                includeState.Matrix[edgeToInclude.Item1, j] = Double.PositiveInfinity;
+
+            /// Add the included edge to the Parital State Route
+            includeState.Edges.Add(edgeToInclude);
+
+            /// Delete edges that would give us a premature cycle
+            if (includeState.Edges.Count < size - 1)
+            {
+                int startCity = edgeToInclude.Item1;
+                while (includeState.Edges.Find(x => x.Item2 == startCity) != null)
+                    startCity = includeState.Edges.Find(x => x.Item2 == startCity).Item1;
+
+                int endCity = edgeToInclude.Item2;
+                while (includeState.Edges.Find(x => x.Item1 == endCity) != null)
+                    endCity = includeState.Edges.Find(x => x.Item1 == endCity).Item2;
+
+                while (startCity != endCity)
+                {
+                    includeState.Matrix[endCity, startCity] = Double.PositiveInfinity;
+                    includeState.Matrix[edgeToInclude.Item2, startCity] = Double.PositiveInfinity;
+                    startCity = includeState.Edges.Find(x => x.Item1 == startCity).Item2;
+                }
+            }
+
+            return reduce(includeState);
+        }
+
+        private PartialState excludeEdgeState(PartialState state, Tuple<int, int> edgeToExclude)
+        {
+            /// We need to make a copy of the partial state.
+            PartialState excludeState = new PartialState(
+                (double[,])state.Matrix.Clone(),
+                state.LowerBound,
+                new List<Tuple<int, int>>(state.Edges));
+
+            /// Exclude the given edge, then reduce and return the matrix
+            excludeState.Matrix[edgeToExclude.Item1, edgeToExclude.Item2] = Double.PositiveInfinity;
+            return reduce(excludeState);
+        }
+
+        private double excludeCost(PartialState state, Tuple<int, int> edgeToExclude)
+        {
+            int size = state.Matrix.GetLength(0);
+
+            /// Get the smallest row value, aside from the edgeToExclude
+            double rowVal = Double.PositiveInfinity;
+            for (int i = 0; i < size; i++)
+            {
+                if (i != edgeToExclude.Item1 && state.Matrix[i, edgeToExclude.Item2] < rowVal)
+                    rowVal = state.Matrix[i, edgeToExclude.Item2];
+            }
+
+            /// Get the smallest col value, aside from the edgeToExclude
+            double colVal = Double.PositiveInfinity;
+            for (int j = 0; j < size; j++)
+            {
+                if (j != edgeToExclude.Item2 && state.Matrix[edgeToExclude.Item1, j] < colVal)
+                    colVal = state.Matrix[edgeToExclude.Item1, j];
+            }
+
+            return colVal + rowVal;
+        }
+
+        private double IncludeExcludeDiff(PartialState state, Tuple<int, int> position)
+        {
+            PartialState includeState = includeEdgeState(state, position);
+            return excludeCost(state, position) - includeState.LowerBound;
+        }
+
+        /// <summary>
+        ///  Small helper function to help with finding some intial routes for bssf
+        /// </summary>
+        /// <param name="list">list to shuffle</param>
+        /// <returns>a shuffled list</returns>
+        private List<City> shuffle(List<City> list)
+        {
+            Random rng = new Random();
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = rng.Next(n + 1);
+                City value = list[k];
+                list[k] = list[n];
+                list[n] = value;
+            }
+            return list;
+        }
+
+
+        /// <summary>
+        /// solve the problem.  This is the entry point for the solver when the run button is clicked
+        /// right now it just picks a simple solution. 
+        /// </summary>
+        public void solveBBProblem()
+        {
+            /// Get our timer and stopwatch ready
+            bool intervalExceeded = false;
+            Timer timer = new Timer(10 * 60 * 1000); //Minutes * 60 Seconds * 1000 Milliseconds
+            ElapsedEventHandler handler = (sender, e) => { intervalExceeded = true; };
+            timer.Elapsed += handler;
+            Stopwatch stopwatch = new Stopwatch();
+
+            timer.Start();
+            stopwatch.Start();
+
+            /// Generate five random, greedy solutions and select the best one as our initial value
+            TSPSolution bestSoFar = null;
+            List<City> randomCities = new List<City>(GetCities());
+            for (int i = 0; i < 5; i++)
+            {
+                bool validRoute = true;
+                HashSet<int> cities = new HashSet<int>();
+                Route = new ArrayList();
+                randomCities = shuffle(randomCities);
+                Route.Add(randomCities[0]);
+                for (int x = 1; x < randomCities.Count; x++)
+                    cities.Add(x);
+                int nextCity = -1;
+                double dist = Double.PositiveInfinity;
+                while (Route.Count < randomCities.Count && validRoute)
+                {
+                    foreach (int x in cities)
+                    {
+                        City temp = (City)Route[0];
+                        if (temp.costToGetTo(randomCities[x]) < dist)
+                        {
+                            nextCity = x;
+                            dist = temp.costToGetTo(randomCities[x]);
+                        }
+                    }
+
+                    if (nextCity != -1)
+                    {
+                        Route.Insert(0, randomCities[nextCity]);
+                        cities.Remove(nextCity);
+                        nextCity = -1;
+                        dist = double.PositiveInfinity;
+                    }
+                    else
+                        validRoute = false;
+                }
+
+                if (Double.IsInfinity(((City)Route[0]).costToGetTo((City)Route[randomCities.Count - 1])))
+                    validRoute = false;
+
+                if (!validRoute)
+                {
+                    i--;
+                    continue;
+                }
+
+
+                if (bestSoFar == null)
+                {
+                    Route.Reverse();
+                    bestSoFar = new TSPSolution(Route);
+                }
+                else
+                {
+                    TSPSolution tempSolution = new TSPSolution(Route);
+                    if (tempSolution.costOfRoute() < bestSoFar.costOfRoute())
+                        bestSoFar = tempSolution;
+                }
+            }
+
+            // call this the best solution so far.
+            bssf = bestSoFar;
+
+            City[] myCities = GetCities();
+
+            /// Create and then fill the cost matrix
+            double[,] matrix = new double[myCities.Length, myCities.Length];
+            for (int i = 0; i < myCities.Length; i++)
+            {
+                /// Get initial values for the row
+                for (int j = 0; j < myCities.Length; j++)
+                {
+                    if (i == j)
+                        matrix[i, j] = Double.PositiveInfinity;
+                    else
+                        matrix[i, j] = myCities[i].costToGetTo(myCities[j]);
+                }
+            }
+
+            /// Reduce the cost matrix to get the initial lower bound
+            /// and the initial state for this problem
+            PartialState initialState
+                = reduce(new PartialState(matrix, 0, new List<Tuple<int, int>>()));
+
+            /// Use these variables to keep track of various statistics for the 
+            /// performance of the method
+            int maxNumStatesStored = 0;
+            int numBssfUpdates = 0;
+            int numStatesCreated = 0;
+            int numStatesPruned = 0;
+
+            /// Insert the initial state into the priority queue, and
+            /// we're off to the races
+            PriorityQueue pq = new PriorityQueue();
+            pq.insert(initialState);
+
+            /// While we still have states in the queue...
+            while (!pq.isEmpty() && !intervalExceeded)
+            {
+                /// Check to see how many states are being stored by the queue, update as needed
+                if (pq.size() > maxNumStatesStored) maxNumStatesStored = pq.size();
+
+                /// Get the Partial State with the lowest lower bound
+                PartialState myState = pq.deleteMin();
+
+                /// If this partial state has a lower bound that is 
+                /// worst than bssf, then we can prune it
+                if (bssf.costOfRoute() <= myState.LowerBound)
+                {
+                    numStatesPruned++;
+                    continue;
+                }
+
+                /// If the route in this state has included all cities
+                if (myState.Edges.Count == myCities.GetLength(0) - 1)
+                {
+                    Route = new ArrayList();
+                    Tuple<int, int> firstEdge = myState.Edges[0];
+                    Route.Add(myCities[firstEdge.Item1]);
+                    Route.Add(myCities[firstEdge.Item2]);
+
+                    int lastCity = firstEdge.Item2;
+                    int firstCity = firstEdge.Item1;
+                    for (int i = 2; i < myCities.GetLength(0); i++)
+                    {
+                        Tuple<int, int> currentEdge
+                            = myState.Edges.Find(x => x.Item1 == lastCity);
+                        if (currentEdge == null)
+                        {
+                            Tuple<int, int> tempEdge
+                                = myState.Edges.Find(x => x.Item2 == firstCity);
+                            if (currentEdge == null)
+                                Route.Insert(0, myCities[tempEdge.Item1]);
+                            firstCity = tempEdge.Item1;
+                        }
+                        else
+                        {
+                            Route.Add(myCities[currentEdge.Item2]);
+                            lastCity = currentEdge.Item2;
+                        }
+                    }
+
+                    TSPSolution tempSolution = new TSPSolution(Route);
+                    if (bssf.costOfRoute() > tempSolution.costOfRoute())
+                    {
+                        bssf = tempSolution;
+                        numBssfUpdates++;
+                    }
+                }
+                else
+                {
+                    /// Find the spots in the partial state that have distances of zero
+                    int size = myState.Matrix.GetLength(0);
+                    List<Tuple<int, int>> zeroSpots = new List<Tuple<int, int>>();
+                    for (int i = 0; i < size; i++)
+                    {
+                        /// Only check those cities that have not yet been added to our route
+                        if (!myState.Edges.Exists(x => x.Item1 == i))
+                        {
+                            for (int j = 0; j < size; j++)
+                            {
+                                /// For every city not checking itself, and has a distance of 
+                                /// zero after the lower bound, add it
+                                if (i != j && myState.Matrix[i, j] == 0)
+                                    zeroSpots.Add(new Tuple<int, int>(i, j));
+                            }
+                        }
+                    }
+
+                    /// Pick the zero spot that has the greatest difference between
+                    /// including and excluding that particular edge.
+                    Tuple<Tuple<int, int>, double> lowestSpot
+                        = new Tuple<Tuple<int, int>, double>(zeroSpots[0], IncludeExcludeDiff(myState, zeroSpots[0]));
+                    for (int i = 1; i < zeroSpots.Count; i++)
+                    {
+                        if (IncludeExcludeDiff(myState, zeroSpots[i]) > lowestSpot.Item2)
+                            lowestSpot = new Tuple<Tuple<int, int>, double>(zeroSpots[i],
+                                                                            IncludeExcludeDiff(myState, zeroSpots[i]));
+                    }
+
+                    PartialState includeState = includeEdgeState(myState, lowestSpot.Item1);
+                    PartialState excludeState = excludeEdgeState(myState, lowestSpot.Item1);
+
+                    if (includeState.LowerBound < bssf.costOfRoute())
+                    {
+                        pq.insert(includeState);
+                        numStatesCreated++;
+                    }
+                    else
+                        numStatesPruned++;
+
+                    if (excludeState.LowerBound < bssf.costOfRoute())
+                    {
+                        pq.insert(excludeState);
+                        numStatesCreated++;
+                    }
+                    else
+                        numStatesPruned++;
+                }
+            }
+
+            stopwatch.Stop();
+
+            // update the cost of the tour. 
+            Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            Program.MainForm.tbElapsedTime.Text = stopwatch.Elapsed.TotalSeconds.ToString();
+            //Program.MainForm.tbStatesSaved.Text = maxNumStatesStored.ToString();
+            //Program.MainForm.tbBSSFUpdates.Text = numBssfUpdates.ToString();
+            //Program.MainForm.tbStatesCreated.Text = numStatesCreated.ToString();
+            //Program.MainForm.tbStatesPruned.Text = numStatesPruned.ToString();
+
+            // do a refresh. 
+            Program.MainForm.Invalidate();
+
+            Console.Out.WriteLine("Max # of States Stored: " + maxNumStatesStored.ToString());
+            Console.Out.WriteLine("# of BSSF Updates: " + numBssfUpdates.ToString());
+            Console.Out.WriteLine("Total # of States Created: " + numStatesCreated.ToString());
+            Console.Out.WriteLine("Total # of States Pruned: " + numStatesPruned.ToString());
+        }
+
         #endregion
     }
 
