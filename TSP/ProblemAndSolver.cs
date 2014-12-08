@@ -422,6 +422,65 @@ namespace TSP
 
             // assign as best solution so far
             bssf = new TSPSolution(Route);
+
+
+
+            //double costToBeat = bssf.costOfRoute();
+            //Console.WriteLine("initial length: {0}", costToBeat);
+            //bool changesMade = true;
+            //while (changesMade)
+            //{
+            //    changesMade = false;
+
+            //    for (int i = 1; i < (Route.Count - 2); i++)
+            //    {
+            //        for (int j = i + 1; j < (Route.Count - 1); j++)
+            //        {
+            //            // find the cost of original sequence versus cost of reversed
+            //            double currSeqCost = 0.0D;
+            //            for (int k = i - 1; k <= j; k++)
+            //            {
+            //                currSeqCost += (Route[k] as City).costToGetTo((Route[k + 1] as City));
+            //            }
+
+            //            double revSeqCost = (Route[i - 1] as City).costToGetTo((Route[j] as City));
+            //            for (int k = i; k < j; k++)
+            //            {
+            //                double dist = (Route[k + 1] as City).costToGetTo((Route[k] as City));
+            //                if (dist == 0D || Double.IsInfinity(dist) || Double.IsNaN(dist))
+            //                {
+            //                    revSeqCost = Double.PositiveInfinity;
+            //                    break;
+            //                }
+
+            //                revSeqCost += dist;
+            //            }
+            //            if (!Double.IsInfinity(revSeqCost))
+            //            {
+            //                double dist = (Route[i] as City).costToGetTo((Route[j + 1] as City));
+            //                if (dist != 0.0D && !Double.IsInfinity(dist) && !Double.IsNaN(dist))
+            //                {
+            //                    revSeqCost += dist;
+            //                }
+            //                else
+            //                {
+            //                    revSeqCost = Double.PositiveInfinity;
+            //                }
+            //            }
+
+            //            if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity)
+            //            {
+            //                Route.Reverse(i, j - i + 1);
+            //                bssf = new TSPSolution(Route);
+            //                costToBeat = bssf.costOfRoute();
+            //                changesMade = true;
+            //            }
+            //        }
+            //    }
+
+            //}
+
+
             // update the cost of the tour. 
             Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
             // do a refresh. 
@@ -844,6 +903,667 @@ namespace TSP
         }
 
         #endregion
+
+        #region Popularity -> 2-opt
+        // not narcississtic to me, makes it pretty and organized :)
+
+        // integer greedy measure
+        private double lengthOfGreedy()
+        {
+            int initial = 0;
+            bool pathNotFound = true;
+            HashSet<int> visited = new HashSet<int>();
+
+            // loop through initial starting nodes for greedy path
+            // until one of them finishes visiting all cities 
+            // without hitting a dead end
+            while (pathNotFound)
+            {
+                pathNotFound = false;
+                Route = new ArrayList();
+                City cursor = Cities[initial];
+                Route.Add(Cities[initial]);
+                visited.Add(initial);
+
+                // starting with city at index `initial`
+                // go to the nearest city and repeat
+                // untill all cities have been visited
+                while (visited.Count != Cities.Length)
+                {
+                    double dist = Double.PositiveInfinity;
+                    int bestNeighbor = -1;
+
+                    for (int i = 0; i < Cities.Length; i++)
+                    {
+                        if (!visited.Contains(i))
+                        {
+                            if (cursor.costToGetTo(Cities[i]) < dist)
+                            {
+                                dist = cursor.costToGetTo(Cities[i]);
+                                bestNeighbor = i;
+                            }
+                        }
+                    }
+
+                    if (bestNeighbor == -1)
+                    {
+                        // no path available
+                        // break and try a different start node
+                        // (class spec says no backtracking)
+                        pathNotFound = true;
+                        break;
+                    }
+                    else
+                    {
+                        // found closest neighbor, go there
+                        visited.Add(bestNeighbor);
+                        Route.Add(Cities[bestNeighbor]);
+                        cursor = Cities[bestNeighbor];
+                    }
+
+                }
+
+                // if the last path failed to find all cities...
+                // ...start wiht a different initial city
+                initial++;
+            }
+
+            // assign as best solution so far
+            bssf = new TSPSolution(Route);
+            return bssf.costOfRoute();
+        }
+
+        // storage container for edge info
+        private struct EdgeInfo
+        {
+            public int nodeA;
+            public int nodeB;
+            public double distance;
+            public double score;
+
+            public EdgeInfo(int a, int b, double d, double s)
+            {
+                nodeA = a;
+                nodeB = b;
+                distance = d;
+                score = s;
+            }
+        }
+
+        // storage unit for City popularity
+        private struct CityInfo
+        {
+            public double averageOutboundEdgeLength;
+            public int cityArrayIndex;
+            public double popRanking;
+
+            public CityInfo(int idx, double ave, double pop)
+            {
+                averageOutboundEdgeLength = ave;
+                cityArrayIndex = idx;
+                popRanking = pop;
+            }
+        }
+
+        // sorter for edges by distance
+        private List<EdgeInfo> sortEdgeInfoByDist(List<EdgeInfo> edges)
+        {
+            // base cases
+            if (edges.Count <= 1)
+            {
+                return edges;
+            }
+
+            // recursive split and sort
+            double pivotPoint = edges[edges.Count / 2].distance;
+            List<EdgeInfo> lessThans = new List<EdgeInfo>();
+            List<EdgeInfo> greaterThans = new List<EdgeInfo>();
+            List<EdgeInfo> equalTos = new List<EdgeInfo>();
+
+            foreach (EdgeInfo point in edges)
+            {
+                if (point.distance < pivotPoint)
+                {
+                    lessThans.Add(point);
+                }
+                else if (point.distance > pivotPoint)
+                {
+                    greaterThans.Add(point);
+                }
+                else
+                {
+                    equalTos.Add(point);
+                }
+            }
+
+            lessThans = this.sortEdgeInfoByDist(lessThans);
+            greaterThans = this.sortEdgeInfoByDist(greaterThans);
+
+            List<EdgeInfo> total = new List<EdgeInfo>();
+            total.AddRange(lessThans);
+            total.AddRange(equalTos);
+            total.AddRange(greaterThans);
+            return total;
+        }
+
+        // sorter for edges by their popularity score
+        private List<EdgeInfo> sortEdgeInfoByScore(List<EdgeInfo> edges)
+        {
+            // base cases
+            if (edges.Count <= 1)
+            {
+                return edges;
+            }
+
+            // recursive split and sort
+            double pivotPoint = edges[edges.Count / 2].score;
+            List<EdgeInfo> lessThans = new List<EdgeInfo>();
+            List<EdgeInfo> greaterThans = new List<EdgeInfo>();
+            List<EdgeInfo> equalTos = new List<EdgeInfo>();
+
+            foreach (EdgeInfo point in edges)
+            {
+                if (point.score < pivotPoint)
+                {
+                    lessThans.Add(point);
+                }
+                else if (point.score > pivotPoint)
+                {
+                    greaterThans.Add(point);
+                }
+                else
+                {
+                    equalTos.Add(point);
+                }
+            }
+
+            lessThans = this.sortEdgeInfoByScore(lessThans);
+            greaterThans = this.sortEdgeInfoByScore(greaterThans);
+
+            // reorder from small to large
+            List<EdgeInfo> total = new List<EdgeInfo>();
+            total.AddRange(lessThans);
+            total.AddRange(equalTos);
+            total.AddRange(greaterThans);
+            return total;
+        }
+
+        // sorter for cities by their average outbound edge length
+        private List<CityInfo> sortCityInfoByAve(List<CityInfo> cities)
+        {
+            // base cases
+            if (cities.Count <= 1)
+            {
+                return cities;
+            }
+
+            // recursive split and sort
+            double pivotPoint = cities[cities.Count / 2].averageOutboundEdgeLength;
+            List<CityInfo> lessThans = new List<CityInfo>();
+            List<CityInfo> greaterThans = new List<CityInfo>();
+            List<CityInfo> equalTos = new List<CityInfo>();
+
+            foreach (CityInfo point in cities)
+            {
+                if (point.averageOutboundEdgeLength < pivotPoint)
+                {
+                    lessThans.Add(point);
+                }
+                else if (point.averageOutboundEdgeLength > pivotPoint)
+                {
+                    greaterThans.Add(point);
+                }
+                else
+                {
+                    equalTos.Add(point);
+                }
+            }
+
+            lessThans = this.sortCityInfoByAve(lessThans);
+            greaterThans = this.sortCityInfoByAve(greaterThans);
+
+            // reorder from greatest to smallest
+            List<CityInfo> total = new List<CityInfo>();
+            total.AddRange(greaterThans);
+            total.AddRange(equalTos);
+            total.AddRange(lessThans);
+            return total;
+        }
+
+        // sorter for cities by their original Cities array index
+        private List<CityInfo> sortCityInfoByIndex(List<CityInfo> cities)
+        {
+            // base cases
+            if (cities.Count <= 1)
+            {
+                return cities;
+            }
+
+            // recursive split and sort
+            double pivotPoint = cities[cities.Count / 2].cityArrayIndex;
+            List<CityInfo> lessThans = new List<CityInfo>();
+            List<CityInfo> greaterThans = new List<CityInfo>();
+            List<CityInfo> equalTos = new List<CityInfo>();
+
+            foreach (CityInfo point in cities)
+            {
+                if (point.cityArrayIndex < pivotPoint)
+                {
+                    lessThans.Add(point);
+                }
+                else if (point.cityArrayIndex > pivotPoint)
+                {
+                    greaterThans.Add(point);
+                }
+                else
+                {
+                    equalTos.Add(point);
+                }
+            }
+
+            lessThans = this.sortCityInfoByIndex(lessThans);
+            greaterThans = this.sortCityInfoByIndex(greaterThans);
+
+            // reorder from greatest to smallest
+            List<CityInfo> total = new List<CityInfo>();
+            total.AddRange(greaterThans);
+            total.AddRange(equalTos);
+            total.AddRange(lessThans);
+            return total;
+        }
+
+
+        // Popularity -> 2-opt TSP solver
+        public void solveByPopularityAnd2opt()
+        {
+            Stopwatch clock0 = Stopwatch.StartNew(); //total func time
+
+            // Dark Magick factors for picking the next popularity ratio
+            // later, popularity will be determined by two things:
+            //     - the actual length of the edge
+            //     - the average of the lengths of the lower than average-lengthed edges 
+            //       that are LEAVING the destination city of the edge in question
+            //
+            // Seems complex, but really isn't. Basically, does the city an edge
+            // takes you to have a decent chance of having more short edges to
+            // choose from? The problem is, the weights of those two numbers differ
+            // depending on the spread of the cities. Prime country for a local minimum
+            // is roughly (3 + sqrt(lengthOfGreedySolution/1000)):1, so we start there,
+            // and re-run this algorithm focusing in on local minimums and jumping further
+            // and further away from the other areas. This does cause some spread in total
+            // run times, but it does work consistently to find shorter paths than nearest
+            // neighbor greedy, and is quite unique :)
+            int directionFactor = -1;
+            double multFactor = 0.25D;
+            double gNNlength = this.lengthOfGreedy();
+            double dasDarkMagickFactor = (3D + (Math.Sqrt(gNNlength/1000D)));
+            double lastBSSF = 0.0D;
+            int failedTriesAtBSSF = 0;
+
+            // calculate popularity of each city (more pop == smaller average outgoing edges)
+            List<CityInfo> cityPopularities = new List<CityInfo>();
+            for (int i = 0; i < Cities.Length; i++)
+            {
+                // start by finding average length of outgoing edges
+                double averageOutEdgeLen = 0.0D;
+                int actualEdgeCount = 0;
+                for (int j = 0; j < Cities.Length; j++)
+                {
+                    if (Cities[i].costToGetTo(Cities[j]) != Double.PositiveInfinity && Cities[i].costToGetTo(Cities[j]) != 0.0D)
+                    {
+                        averageOutEdgeLen += Cities[i].costToGetTo(Cities[j]);
+                        actualEdgeCount++;
+                    }
+                }
+                averageOutEdgeLen /= (double)actualEdgeCount;
+
+                // now, find the average length of outgoing edges that are SHORTER 
+                // than the average length of an outgoing edge
+                // (basically, how short are the shorter edges this city has?)
+                double averageOfSmalls = 0.0D;
+                int actualSmalls = 0;
+                for (int j = 0; j < Cities.Length; j++)
+                {
+                    if (Cities[i].costToGetTo(Cities[j]) != Double.PositiveInfinity && Cities[i].costToGetTo(Cities[j]) < averageOutEdgeLen)
+                    {
+                        averageOfSmalls += Cities[i].costToGetTo(Cities[j]);
+                        actualSmalls++;
+                    }
+                }
+
+                averageOfSmalls /= (double)actualSmalls;
+                cityPopularities.Insert(cityPopularities.Count, new CityInfo(i, averageOfSmalls, averageOfSmalls));
+            }
+
+            // we're going to find many BSSFs, wanna save the overall
+            // best so far here (using provided variables in this. for
+            // the best so far relative to inside this loop
+            TSPSolution overallBSSF = null;
+            ArrayList overallBestRoute = new ArrayList();
+            while(failedTriesAtBSSF < 50) // can change the 50, but have found best results occur here
+            {
+                // first, calculate value of all edges (existing or not)
+                EdgeInfo[,] edgeScores = new EdgeInfo[Cities.Length, Cities.Length];
+                for (int i = 0; i < Cities.Length; i++)
+                {
+                    for (int j = 0; j < Cities.Length; j++)
+                    {
+                        if (i == j)
+                        {
+                            // now that popularity is lower for better paths, this should
+                            // probably not default to zero, but shouldn't have an impact
+                            // on the actual results, since non-existant edges are pruned
+                            // at path finding time. However, performance gains might be had
+                            // by defaulting this score to inf instead of zero ???
+                            edgeScores[i, j] = new EdgeInfo(i, j, Double.PositiveInfinity, 0);
+                        }
+                        else
+                        {
+                            // popularity scored as follows: the lower, the better (meaning yielding a shorter overall path)
+                            // use distance plus the average of shorter than average edges leaving destination city
+                            // as the total popularity
+                            edgeScores[i, j] = new EdgeInfo(i, j, Cities[i].costToGetTo(Cities[j]), Cities[i].costToGetTo(Cities[j]));
+                            edgeScores[i, j].score += (cityPopularities[j].popRanking / dasDarkMagickFactor);
+                            edgeScores[j, i] = new EdgeInfo(j, i, Cities[j].costToGetTo(Cities[i]), Cities[j].costToGetTo(Cities[i]));
+                            edgeScores[j, i].score += (cityPopularities[i].popRanking / dasDarkMagickFactor);
+                        }
+                    }
+                }
+
+                // split up by city 
+                // (leftover from my old approach, this could be removed
+                // if the ending path choosing didn't rely on it...)
+                List<EdgeInfo[]> edgesByNode = new List<EdgeInfo[]>();
+                for (int i = 0; i < Cities.Length; i++)
+                {
+                    EdgeInfo[] nodeEdges = new EdgeInfo[Cities.Length];
+                    for (int j = 0; j < Cities.Length; j++)
+                    {
+                        nodeEdges[j] = edgeScores[i, j];
+                    }
+
+                    // sort nodeEdges by their popularity scores
+                    List<EdgeInfo> tmpList = new List<EdgeInfo>(nodeEdges);
+                    tmpList = this.sortEdgeInfoByScore(tmpList);
+                    nodeEdges = tmpList.ToArray();
+
+                    edgesByNode.Insert(i, nodeEdges);
+                }
+
+                // select edges by their popularity until enough for path are needed
+                List<EdgeInfo> path = new List<EdgeInfo>();
+                int firstCitySeed = -1;
+                int firstCity = firstCitySeed;
+                int finalCity = 0;
+                while (path.Count < Cities.Length - 1)
+                {
+                    // if this loop runs more than once, it was because the
+                    // last starting city ended in a dead end somewhere
+                    // so we start at a different city each time
+                    // (very rare)
+                    firstCitySeed++;
+                    path = new List<EdgeInfo>();
+                    int[] visitCounts = new int[Cities.Length];
+                    for (int k = 0; k < visitCounts.Length; k++)
+                    {
+                        visitCounts[k] = 0;
+                    }
+
+                    int currCity = firstCitySeed;
+                    int nextCity = 0;
+                    firstCity = firstCitySeed;
+                    finalCity = 0;
+                    visitCounts[0] = 1;
+
+                    while (path.Count < (Cities.Length - 1))
+                    {
+                        bool deadEndFound = true;
+                        EdgeInfo[] currNodeEdges = edgesByNode[currCity];
+                        for (int k = 0; k < currNodeEdges.Length; k++)
+                        {
+                            if (currNodeEdges[k].nodeA == currCity)
+                            {
+                                if (visitCounts[currNodeEdges[k].nodeB] == 0 && edgeScores[currNodeEdges[k].nodeA, currNodeEdges[k].nodeB].distance != Double.PositiveInfinity)
+                                {
+                                    nextCity = currNodeEdges[k].nodeB;
+
+                                    visitCounts[nextCity] = 1;
+                                    path.Add(currNodeEdges[k]);
+                                    currCity = nextCity;
+                                    finalCity = nextCity;
+                                    deadEndFound = false;
+                                    break;
+                                }
+                            }
+                            else //if (currNodeEdges[k].nodeB == currCity), which is already implied
+                            {
+                                if (visitCounts[currNodeEdges[k].nodeA] == 0 && edgeScores[currNodeEdges[k].nodeB, currNodeEdges[k].nodeA].distance != Double.PositiveInfinity)
+                                {
+                                    nextCity = currNodeEdges[k].nodeA;
+
+                                    visitCounts[nextCity] = 1;
+                                    path.Add(currNodeEdges[k]);
+                                    currCity = nextCity;
+                                    finalCity = nextCity;
+                                    deadEndFound = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (deadEndFound)
+                        {
+                            // this log statement is necessary, otherwise MY compiler at least
+                            // was omitting the break statement, which causes the algo to fail!
+                            Console.WriteLine("Warning: Dead End Found (message needed for compiler)");
+                            break;
+                        }
+                    }
+
+                    if (path.Count < (Cities.Length - 1))
+                    {
+                        // this log statement is necessary, otherwise MY compiler at least
+                        // was omitting the continue statement, which causes the algo to fail!
+                        Console.WriteLine("Warning: Dead End Found (message needed for compiler)");
+                        continue;
+                    }
+
+                    // This... is super ghetto. Adding the last city in such a way
+                    // that we know an edge exists not only from n-1 to n, but also
+                    // from n back to 1 (since the path has to be a cycle)
+                    // Feel free to explore better ways of doing this.
+                    EdgeInfo[] lastNodeEdges = edgesByNode[finalCity];
+                    for (int i = 0; i < lastNodeEdges.Length; i++)
+                    {
+                        if (lastNodeEdges[i].nodeA == firstCity && lastNodeEdges[i].nodeB == finalCity)
+                        {
+                            path.Add(lastNodeEdges[i]);
+                            break;
+                        }
+                        if (lastNodeEdges[i].nodeB == firstCity && lastNodeEdges[i].nodeA == finalCity)
+                        {
+                            path.Add(lastNodeEdges[i]);
+                            break;
+                        }
+                    }
+
+                }
+
+                // load Route!
+                Route = new ArrayList();
+                int cityIdx = firstCitySeed;
+                while (Route.Count < Cities.Length)
+                {
+                    // look for occurrence on i in the nodes
+                    for (int pathIdx = 0; pathIdx < path.Count; pathIdx++)
+                    {
+                        if (path[pathIdx].nodeA == cityIdx)
+                        {
+                            Route.Add(Cities[cityIdx]);
+                            cityIdx = path[pathIdx].nodeB;
+                            path.RemoveAt(pathIdx);
+                            break;
+                        }
+                        if (path[pathIdx].nodeB == cityIdx)
+                        {
+                            Route.Add(Cities[cityIdx]);
+                            cityIdx = path[pathIdx].nodeA;
+                            path.RemoveAt(pathIdx);
+                            break;
+                        }
+                    }
+                }
+                bssf = new TSPSolution(Route);
+
+                // one time through the popularity algortihm is complete. Now we compare
+                // its performance against the previous run and determine what ratio
+                // to use in the next popularity calculation.
+
+                //Console.WriteLine("dark magick factor: {0}, length found: {1}", dasDarkMagickFactor,costForDebug);
+                if (overallBSSF == null || overallBSSF.costOfRoute() > bssf.costOfRoute())
+                {
+                    // A new best route was found!
+                    // reset failed tries, our hope is renewed!
+                    // lower the multiply factor, we shoudl explore around this find
+                    // to see if it has a close buddy who's even shorter!
+                    overallBSSF = bssf;
+                    overallBestRoute = Route;
+                    //Console.WriteLine("found a better solution!");
+                    multFactor = 0.25D;
+                    failedTriesAtBSSF = 0;
+                }
+                else if (lastBSSF == bssf.costOfRoute())
+                {
+                    // hmmm, we're stuck in a plateau 
+                    // (path lengths tend to be the same for long stretches of
+                    // a dasDarkMagickFactor value)
+                    // up the multiply factor to FFWD out of it
+                    // and give up less hope since plateaus are normal
+                    multFactor *= 2D;
+                    directionFactor *= -1;
+                    failedTriesAtBSSF++; // punish less for being stuck in plateau
+                    if (Math.Abs(dasDarkMagickFactor) > 500D)
+                    {
+                        // outside this range rarely finds any paths of value
+                        // re-center-ish (coming back to the same spot
+                        // each time doesn't allow for good exploration)
+                        // turn BACK around to face original direction
+                        // and slow back down
+                        directionFactor *= -1;
+                        multFactor = 2D;
+                        dasDarkMagickFactor -= (500D * (Math.Abs(dasDarkMagickFactor)/dasDarkMagickFactor));
+                        failedTriesAtBSSF--;
+                    }
+                }
+                else if(lastBSSF < bssf.costOfRoute())
+                {
+                    // whoa, this once is worse than the last!
+                    // let's start FFWDing faster!
+                    // jump back the other way!
+                    // hope drains quickly!
+                    multFactor *= 2D;
+                    directionFactor *= -1;
+                    failedTriesAtBSSF += 2;
+                }
+                else
+                {
+                    // we did better than last time, but so what?
+                    // keep plodding along at same pace, maybe
+                    // we'll get even better soon
+                    // hope drains away though
+                    failedTriesAtBSSF += 2;
+                    directionFactor *= -1;
+                }
+
+                // adjust the ratio more strongly if the gap ebtween our answer and greedy's widens
+                // this helps find better solutions when the first one is worse than greedy
+                // which is typical.
+                // then, direcitons goes left/right on -/+ number scale, and multFactor
+                // controls our speed along said number line
+                dasDarkMagickFactor -= directionFactor * (multFactor * (bssf.costOfRoute() / gNNlength));
+                lastBSSF = bssf.costOfRoute();
+            }
+
+            // we gave up hope, the best we got are now our BSSF and Route
+            // which will be put through 2-opt for refining
+            bssf = overallBSSF;
+            Route = overallBestRoute;
+            double costToBeat = bssf.costOfRoute();
+            //Console.WriteLine("initial length: {0}", costToBeat);
+
+            // keep doign 2-opt over and over until it has no effect!
+            bool changesMade = true;
+            while (changesMade)
+            {
+                changesMade = false;
+
+                // for each valid starting point of a reversible segment...
+                for (int i = 1; i < (Route.Count - 2); i++)
+                {
+                    // for each valid ending point of a reversible segment...
+                    for (int j = i + 1; j < (Route.Count - 1); j++)
+                    {
+                        // find the cost of original sequence versus cost of reversed
+                        double currSeqCost = 0.0D;
+                        for (int k = i - 1; k <= j; k++)
+                        {
+                            currSeqCost += (Route[k] as City).costToGetTo((Route[k + 1] as City));
+                        }
+
+                        // note that finding cost of reversed sequence is a little harder
+                        // C# may provide some safety with addition of PositiveInfinity, 
+                        // but I wasn't willing to risk it (obviously, look at this mess!)
+                        double revSeqCost = (Route[i - 1] as City).costToGetTo((Route[j] as City));
+                        for (int k = i; k < j; k++)
+                        {
+                            double dist = (Route[k + 1] as City).costToGetTo((Route[k] as City));
+                            if (dist == 0D || Double.IsInfinity(dist) || Double.IsNaN(dist))
+                            {
+                                revSeqCost = Double.PositiveInfinity;
+                                break;
+                            }
+
+                            revSeqCost += dist;
+                        }
+                        if (!Double.IsInfinity(revSeqCost))
+                        {
+                            double dist = (Route[i] as City).costToGetTo((Route[j + 1] as City));
+                            if (dist != 0.0D && !Double.IsInfinity(dist) && !Double.IsNaN(dist))
+                            {
+                                revSeqCost += dist;
+                            }
+                            else
+                            {
+                                revSeqCost = Double.PositiveInfinity;
+                            }
+                        }
+
+                        // if the cost of the reversal is less than the original subsequence, 
+                        // then we'll reverse it and calculate a new BSSF!
+                        if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity)
+                        {
+                            Route.Reverse(i, j - i + 1);
+                            bssf = new TSPSolution(Route);
+                            costToBeat = bssf.costOfRoute();
+                            changesMade = true; // since we improved, 2-opt has to run at least once more
+                            //Console.WriteLine("2-opt improved to: {0}", costToBeat);
+                        }
+                    }
+                }
+            }
+
+            clock0.Stop();
+            
+            // update the cost of the tour. 
+            Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            Program.MainForm.tbElapsedTime.Text = " " + clock0.Elapsed.TotalSeconds + " s";
+            // do a refresh. 
+            Program.MainForm.Invalidate();            
+        }
+
+        #endregion
+
+
     }
 
 }
