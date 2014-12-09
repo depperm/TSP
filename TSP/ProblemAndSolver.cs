@@ -1507,7 +1507,7 @@ namespace TSP
                         double currSeqCost = 0.0D;
                         for (int k = i; k < j; k++)
                         {
-                            currSeqCost += (Route[k] as City).costToGetTo((Route[k + 1] as City));
+                            currSeqCost += (Route[(k % Route.Count)] as City).costToGetTo((Route[(k + 1) % Route.Count] as City));
                         }
 
                         // note that finding cost of reversed sequence is a little harder
@@ -1520,7 +1520,7 @@ namespace TSP
                             if (revSeqCost == double.PositiveInfinity)
                                 break;
                         }
-                        revSeqCost += (Route[i + 1] as City).costToGetTo((Route[j] as City));
+                        revSeqCost += (Route[(i + 1) % Route.Count] as City).costToGetTo((Route[(j % Route.Count)] as City));
 
                         // if the cost of the reversal is less than the original subsequence, 
                         // then we'll reverse it and calculate a new BSSF!
@@ -1536,7 +1536,7 @@ namespace TSP
                             ArrayList tempList = new ArrayList();
                             if (i != Route.Count - 1)
                             {
-                                tempList = Route.GetRange(i + 1, Route.Count - i - 1);
+                                tempList = new ArrayList(Route.GetRange(i + 1, Route.Count - i - 1));
                                 Route.RemoveRange(i + 1, Route.Count - i - 1);
                                 for (int k = 0; k < tempList.Count; k++)
                                 {
