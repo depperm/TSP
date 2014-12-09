@@ -1182,6 +1182,10 @@ namespace TSP
         // Popularity -> 2-opt TSP solver
         public void solveByPopularityAnd2opt()
         {
+            //based on a sample of 20,50,100,200,300
+            //.5 is a bit larger than necessary to cover varying time(could probably work with .25)
+            double timeToMoveOn = .000113*(Math.Pow(Cities.Length, 2)) + .0034 * Cities.Length + .5;
+            double timeLimit = 10 * 60 * 1000;
             Stopwatch clock0 = Stopwatch.StartNew(); //total func time
 
             // Dark Magick factors for picking the next popularity ratio
@@ -1246,7 +1250,7 @@ namespace TSP
             // the best so far relative to inside this loop
             TSPSolution overallBSSF = null;
             ArrayList overallBestRoute = new ArrayList();
-            while(failedTriesAtBSSF < 50) // can change the 50, but have found best results occur here
+            while (failedTriesAtBSSF < 50 || (clock0.ElapsedMilliseconds / 1000 < timeToMoveOn)) // can change the 50, but have found best results occur here
             {
                 // first, calculate value of all edges (existing or not)
                 EdgeInfo[,] edgeScores = new EdgeInfo[Cities.Length, Cities.Length];
@@ -1301,7 +1305,7 @@ namespace TSP
                 int firstCitySeed = -1;
                 int firstCity = firstCitySeed;
                 int finalCity = 0;
-                while (path.Count < Cities.Length - 1)
+                while (path.Count < Cities.Length - 1 || (clock0.ElapsedMilliseconds / 1000 < timeToMoveOn))
                 {
                     // if this loop runs more than once, it was because the
                     // last starting city ended in a dead end somewhere
@@ -1321,7 +1325,7 @@ namespace TSP
                     finalCity = 0;
                     visitCounts[0] = 1;
 
-                    while (path.Count < (Cities.Length - 1))
+                    while (path.Count < (Cities.Length - 1) || (clock0.ElapsedMilliseconds / 1000 < timeToMoveOn))
                     {
                         bool deadEndFound = true;
                         EdgeInfo[] currNodeEdges = edgesByNode[currCity];
@@ -1489,7 +1493,7 @@ namespace TSP
                 dasDarkMagickFactor -= directionFactor * (multFactor * (bssf.costOfRoute() / gNNlength));
                 lastBSSF = bssf.costOfRoute();
             }
-
+            double priorityTime = clock0.ElapsedMilliseconds;
             // we gave up hope, the best we got are now our BSSF and Route
             // which will be put through 2-opt for refining
             bssf = overallBSSF;
@@ -1500,7 +1504,7 @@ namespace TSP
             // keep doign 2-opt over and over until it has no effect!
             bool changesMade = true;
             TSPSolution tempBssf = bssf;
-            while (changesMade)
+            while (changesMade || clock0.ElapsedMilliseconds < timeLimit)
             {
                 changesMade = false;
 
@@ -1533,7 +1537,7 @@ namespace TSP
                         // then we'll reverse it and calculate a new BSSF!
                         if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity && j < Route.Count)
                         {
-                            Route.Reverse(i+1, j - i - 1);
+                            Route.Reverse(i + 1, j - i - 1);
                             tempBssf = new TSPSolution(Route);
                             if (tempBssf.costOfRoute() < bssf.costOfRoute())
                             {
@@ -1569,6 +1573,9 @@ namespace TSP
             }
 
             clock0.Stop();
+            //Console.WriteLine("Greedy+Priority:" + priorityTime / 1000);
+            //Console.WriteLine("2 opt time:" + (clock0.ElapsedMilliseconds - priorityTime) / 1000);
+            //Console.WriteLine("total time:" + clock0.ElapsedMilliseconds / 1000);
             
             // update the cost of the tour. 
             Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
