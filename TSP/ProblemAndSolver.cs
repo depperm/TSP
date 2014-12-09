@@ -1493,6 +1493,7 @@ namespace TSP
 
             // keep doign 2-opt over and over until it has no effect!
             bool changesMade = true;
+            TSPSolution tempBssf = bssf;
             while (changesMade)
             {
                 changesMade = false;
@@ -1527,9 +1528,13 @@ namespace TSP
                         if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity && j < Route.Count)
                         {
                             Route.Reverse(i, j - i + 1);
-                            bssf = new TSPSolution(Route);
-                            costToBeat = bssf.costOfRoute();
-                            changesMade = true; // since we improved, 2-opt has to run at least once more
+                            tempBssf = new TSPSolution(Route);
+                            if (tempBssf.costOfRoute() < bssf.costOfRoute())
+                            {
+                                bssf = new TSPSolution(Route);
+                                costToBeat = bssf.costOfRoute();
+                                changesMade = true; // since we improved, 2-opt has to run at least once more
+                            }
                         }//cycle reverse
                         else if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity && j > Route.Count)
                         {
@@ -1544,9 +1549,13 @@ namespace TSP
                                 }
                             }
                             Route.Reverse(0, j - i - 1);
-                            bssf = new TSPSolution(Route);
-                            costToBeat = bssf.costOfRoute();
-                            changesMade = true;
+                            tempBssf = new TSPSolution(Route);
+                            if (tempBssf.costOfRoute() < bssf.costOfRoute())
+                            {
+                                bssf = new TSPSolution(Route);
+                                costToBeat = bssf.costOfRoute();
+                                changesMade = true;
+                            }
                         }
                         //Console.WriteLine("2-opt improved to: {0}", costToBeat);
                     }
