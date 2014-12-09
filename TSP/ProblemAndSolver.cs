@@ -187,12 +187,18 @@ namespace TSP
             if (_mode == HardMode.Modes.Easy)
             {
                 for (int i = 0; i < _size; i++)
+                {
                     Cities[i] = new City(rnd.NextDouble(), rnd.NextDouble());
+                    Cities[i].number = i;
+                }
             }
             else // Medium and hard
             {
                 for (int i = 0; i < _size; i++)
+                {
                     Cities[i] = new City(rnd.NextDouble(), rnd.NextDouble(), rnd.NextDouble() * City.MAX_ELEVATION);
+                    Cities[i].number = i;
+                }
             }
 
             HardMode mm = new HardMode(this._mode, this.rnd, Cities);
@@ -1527,7 +1533,7 @@ namespace TSP
                         // then we'll reverse it and calculate a new BSSF!
                         if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity && j < Route.Count)
                         {
-                            Route.Reverse(i, j - i + 1);
+                            Route.Reverse(i+1, j - i - 1);
                             tempBssf = new TSPSolution(Route);
                             if (tempBssf.costOfRoute() < bssf.costOfRoute())
                             {
