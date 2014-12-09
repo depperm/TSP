@@ -1498,14 +1498,14 @@ namespace TSP
                 changesMade = false;
 
                 // for each valid starting point of a reversible segment...
-                for (int i = 1; i < (Route.Count - 2); i++)
+                for (int i = 0; i < Route.Count; i++)
                 {
                     // for each valid ending point of a reversible segment...
-                    for (int j = i + 1; j < (Route.Count - 1); j++)
+                    for (int j = i + 3; j < Route.Count + i; j++)
                     {
                         // find the cost of original sequence versus cost of reversed
                         double currSeqCost = 0.0D;
-                        for (int k = i - 1; k <= j; k++)
+                        for (int k = i; k < j; k++)
                         {
                             currSeqCost += (Route[k] as City).costToGetTo((Route[k + 1] as City));
                         }
@@ -1513,41 +1513,42 @@ namespace TSP
                         // note that finding cost of reversed sequence is a little harder
                         // C# may provide some safety with addition of PositiveInfinity, 
                         // but I wasn't willing to risk it (obviously, look at this mess!)
-                        double revSeqCost = (Route[i - 1] as City).costToGetTo((Route[j] as City));
-                        for (int k = i; k < j; k++)
+                        double revSeqCost = (Route[i] as City).costToGetTo((Route[(j - 1) % Route.Count] as City));
+                        for (int k = j - 1; k > i + 1; k--)
                         {
-                            double dist = (Route[k + 1] as City).costToGetTo((Route[k] as City));
-                            if (dist == 0D || Double.IsInfinity(dist) || Double.IsNaN(dist))
-                            {
-                                revSeqCost = Double.PositiveInfinity;
+                            revSeqCost += (Route[k % Route.Count] as City).costToGetTo((Route[(k - 1) % Route.Count] as City));
+                            if (revSeqCost == double.PositiveInfinity)
                                 break;
-                            }
-
-                            revSeqCost += dist;
                         }
-                        if (!Double.IsInfinity(revSeqCost))
-                        {
-                            double dist = (Route[i] as City).costToGetTo((Route[j + 1] as City));
-                            if (dist != 0.0D && !Double.IsInfinity(dist) && !Double.IsNaN(dist))
-                            {
-                                revSeqCost += dist;
-                            }
-                            else
-                            {
-                                revSeqCost = Double.PositiveInfinity;
-                            }
-                        }
+                        revSeqCost += (Route[i + 1] as City).costToGetTo((Route[j] as City));
 
                         // if the cost of the reversal is less than the original subsequence, 
                         // then we'll reverse it and calculate a new BSSF!
-                        if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity)
+                        if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity && j < Route.Count)
                         {
                             Route.Reverse(i, j - i + 1);
                             bssf = new TSPSolution(Route);
                             costToBeat = bssf.costOfRoute();
                             changesMade = true; // since we improved, 2-opt has to run at least once more
-                            //Console.WriteLine("2-opt improved to: {0}", costToBeat);
+                        }//cycle reverse
+                        else if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity && j > Route.Count)
+                        {
+                            ArrayList tempList = new ArrayList();
+                            if (i != Route.Count - 1)
+                            {
+                                tempList = Route.GetRange(i + 1, Route.Count - i - 1);
+                                Route.RemoveRange(i + 1, Route.Count - i - 1);
+                                for (int k = 0; k < tempList.Count; k++)
+                                {
+                                    Route.Insert(k, tempList[k]);
+                                }
+                            }
+                            Route.Reverse(0, j - i - 1);
+                            bssf = new TSPSolution(Route);
+                            costToBeat = bssf.costOfRoute();
+                            changesMade = true;
                         }
+                        //Console.WriteLine("2-opt improved to: {0}", costToBeat);
                     }
                 }
             }
