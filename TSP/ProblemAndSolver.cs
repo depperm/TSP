@@ -24,11 +24,18 @@ namespace TSP
             public ArrayList
                 Route;
 
+            public TimeSpan TimeTaken;
+
             public TSPSolution(ArrayList iroute)
             {
                 Route = new ArrayList(iroute);
             }
 
+            public TSPSolution(ArrayList iroute, TimeSpan timeIn)
+            {
+                Route = new ArrayList(iroute);
+                TimeTaken = timeIn;
+            }
 
             /// <summary>
             /// Compute the cost of the current route.  
@@ -330,11 +337,13 @@ namespace TSP
             Program.MainForm.tbElapsedTime.Text = "" + timer.Elapsed;
             // do a refresh. 
             Program.MainForm.Invalidate();
-
         }
 
-        ///random
-        public void solveRandomProblem()
+        #endregion
+
+        #region Random Solver
+
+        private TSPSolution solveRandomProblem()
         {
             Stopwatch timer = new Stopwatch();
             timer.Start();
@@ -357,17 +366,36 @@ namespace TSP
             bssf = new TSPSolution(Route);
             timer.Stop();
             // update the cost of the tour. 
-            Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            //Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
             //update the time
-            Program.MainForm.tbElapsedTime.Text = "" + timer.Elapsed;
+            //Program.MainForm.tbElapsedTime.Text = "" + timer.Elapsed;
             // do a refresh. 
-            Program.MainForm.Invalidate();
+            //Program.MainForm.Invalidate();
 
+            bssf.TimeTaken = timer.Elapsed;
+            return bssf;
         }
 
-        // greedy solver
-        public void greedySolve()
+        public void SolveByRandom()
         {
+            TSPSolution solution = solveRandomProblem();
+
+            // update the cost of the tour. 
+            Program.MainForm.tbCostOfTour.Text = " " + solution.costOfRoute();
+            Program.MainForm.tbElapsedTime.Text = " " + solution.TimeTaken.TotalSeconds + " s";
+            // do a refresh. 
+            Program.MainForm.Invalidate();
+        }
+        
+        #endregion
+
+        #region Greedy Solver
+
+        private TSPSolution greedySolve()
+        {
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+            
             int initial = 0;
             bool pathNotFound = true;
             HashSet<int> visited = new HashSet<int>();
@@ -428,16 +456,17 @@ namespace TSP
 
             // assign as best solution so far
             bssf = new TSPSolution(Route);
+            stopWatch.Stop();
+            bssf.TimeTaken = stopWatch.Elapsed;
+            return bssf;
 
-
-
+            #region Some Commented Stuff
             //double costToBeat = bssf.costOfRoute();
             //Console.WriteLine("initial length: {0}", costToBeat);
             //bool changesMade = true;
             //while (changesMade)
             //{
             //    changesMade = false;
-
             //    for (int i = 1; i < (Route.Count - 2); i++)
             //    {
             //        for (int j = i + 1; j < (Route.Count - 1); j++)
@@ -448,7 +477,6 @@ namespace TSP
             //            {
             //                currSeqCost += (Route[k] as City).costToGetTo((Route[k + 1] as City));
             //            }
-
             //            double revSeqCost = (Route[i - 1] as City).costToGetTo((Route[j] as City));
             //            for (int k = i; k < j; k++)
             //            {
@@ -458,7 +486,6 @@ namespace TSP
             //                    revSeqCost = Double.PositiveInfinity;
             //                    break;
             //                }
-
             //                revSeqCost += dist;
             //            }
             //            if (!Double.IsInfinity(revSeqCost))
@@ -473,7 +500,6 @@ namespace TSP
             //                    revSeqCost = Double.PositiveInfinity;
             //                }
             //            }
-
             //            if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity)
             //            {
             //                Route.Reverse(i, j - i + 1);
@@ -483,21 +509,34 @@ namespace TSP
             //            }
             //        }
             //    }
-
             //}
-
+            #endregion
 
             // update the cost of the tour. 
-            Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            //Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            // do a refresh. 
+            //Program.MainForm.Invalidate();
+        }
+
+        /// <summary>
+        ///  Public Method the GUI can use to access the method
+        /// </summary>
+        public void SolveByGreedy()
+        {
+            TSPSolution solution = greedySolve();
+
+            // update the cost of the tour. 
+            Program.MainForm.tbCostOfTour.Text = " " + solution.costOfRoute();
+            Program.MainForm.tbElapsedTime.Text = " " + solution.TimeTaken.TotalSeconds + " s";
             // do a refresh. 
             Program.MainForm.Invalidate();
         }
+
         #endregion
 
         #region Branch & Bound
         /// I didn't give B&B it's own region to be narcisisstic, it just 
         /// kind of got big on me
-
 
         /// <summary>
         /// Row reduce the given matrix in the partial state
@@ -675,7 +714,7 @@ namespace TSP
         /// solve the problem.  This is the entry point for the solver when the run button is clicked
         /// right now it just picks a simple solution. 
         /// </summary>
-        public void solveBBProblem()
+        private TSPSolution solveBBProblem()
         {
          
             /// Get our timer and stopwatch ready
@@ -892,20 +931,37 @@ namespace TSP
             stopwatch.Stop();
 
             // update the cost of the tour. 
-            Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
-            Program.MainForm.tbElapsedTime.Text = stopwatch.Elapsed.TotalSeconds.ToString();
+            //Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
+            //Program.MainForm.tbElapsedTime.Text = stopwatch.Elapsed.TotalSeconds.ToString();
             //Program.MainForm.tbStatesSaved.Text = maxNumStatesStored.ToString();
             //Program.MainForm.tbBSSFUpdates.Text = numBssfUpdates.ToString();
             //Program.MainForm.tbStatesCreated.Text = numStatesCreated.ToString();
             //Program.MainForm.tbStatesPruned.Text = numStatesPruned.ToString();
 
             // do a refresh. 
-            Program.MainForm.Invalidate();
+            //Program.MainForm.Invalidate();
 
             Console.Out.WriteLine("Max # of States Stored: " + maxNumStatesStored.ToString());
             Console.Out.WriteLine("# of BSSF Updates: " + numBssfUpdates.ToString());
             Console.Out.WriteLine("Total # of States Created: " + numStatesCreated.ToString());
             Console.Out.WriteLine("Total # of States Pruned: " + numStatesPruned.ToString());
+
+            bssf.TimeTaken = stopwatch.Elapsed;
+            return bssf;
+        }
+
+        /// <summary>
+        ///  Public Method the GUI can use to access the method
+        /// </summary>
+        public void SolveByBranchAndBound()
+        {
+            TSPSolution solution = solveBBProblem();
+
+            // update the cost of the tour. 
+            Program.MainForm.tbCostOfTour.Text = " " + solution.costOfRoute();
+            Program.MainForm.tbElapsedTime.Text = " " + solution.TimeTaken.TotalSeconds + " s";
+            // do a refresh. 
+            Program.MainForm.Invalidate();
         }
 
         #endregion
@@ -1180,7 +1236,7 @@ namespace TSP
 
 
         // Popularity -> 2-opt TSP solver
-        public void solveByPopularityAnd2opt()
+        private TSPSolution solveByPopularityAnd2opt()
         {
             double timeLimit = 10 * 60 * 1000;
             //based on a sample of 20,50,100,200,300
@@ -1624,16 +1680,34 @@ namespace TSP
             }
 
             clock0.Stop();
-            
+            bssf.TimeTaken = clock0.Elapsed;
+            return bssf;         
+        }
+
+        /// <summary>
+        ///  Public Method the GUI can use to access the method
+        /// </summary>
+        public void SolveByPopAnd2Opt()
+        {
+            TSPSolution solution = solveByPopularityAnd2opt();
+
             // update the cost of the tour. 
-            Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
-            Program.MainForm.tbElapsedTime.Text = " " + clock0.Elapsed.TotalSeconds + " s";
+            Program.MainForm.tbCostOfTour.Text = " " + solution.costOfRoute();
+            Program.MainForm.tbElapsedTime.Text = " " + solution.TimeTaken.TotalSeconds + " s";
             // do a refresh. 
-            Program.MainForm.Invalidate();            
+            Program.MainForm.Invalidate(); 
+        }
+        #endregion
+
+        #region Testing Script
+
+        public void runTester()
+        {
+
+
         }
 
         #endregion
-
 
     }
 

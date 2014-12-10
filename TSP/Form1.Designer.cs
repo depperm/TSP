@@ -54,6 +54,7 @@ namespace TSP
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripLabel5 = new System.Windows.Forms.ToolStripLabel();
             this.toolStripTextBox1 = new System.Windows.Forms.ToolStripTextBox();
+            this.runTesterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStrip1.SuspendLayout();
             this.toolStrip2.SuspendLayout();
             this.SuspendLayout();
@@ -173,7 +174,8 @@ namespace TSP
             this.yourTSPToolStripMenuItem1,
             this.randomToolStripMenuItem1,
             this.bBToolStripMenuItem,
-            this.greedyToolStripMenuItem});
+            this.greedyToolStripMenuItem,
+            this.runTesterToolStripMenuItem});
             this.AlgorithmMenu2.Image = ((System.Drawing.Image)(resources.GetObject("AlgorithmMenu2.Image")));
             this.AlgorithmMenu2.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.AlgorithmMenu2.Name = "AlgorithmMenu2";
@@ -185,35 +187,35 @@ namespace TSP
             // dToolStripMenuItem
             // 
             this.dToolStripMenuItem.Name = "dToolStripMenuItem";
-            this.dToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
+            this.dToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.dToolStripMenuItem.Text = "Default";
             this.dToolStripMenuItem.Click += new System.EventHandler(this.dToolStripMenuItem_Click);
             // 
             // yourTSPToolStripMenuItem1
             // 
             this.yourTSPToolStripMenuItem1.Name = "yourTSPToolStripMenuItem1";
-            this.yourTSPToolStripMenuItem1.Size = new System.Drawing.Size(122, 22);
+            this.yourTSPToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
             this.yourTSPToolStripMenuItem1.Text = "Your TSP";
             this.yourTSPToolStripMenuItem1.Click += new System.EventHandler(this.yourTSPToolStripMenuItem1_Click);
             // 
             // randomToolStripMenuItem1
             // 
             this.randomToolStripMenuItem1.Name = "randomToolStripMenuItem1";
-            this.randomToolStripMenuItem1.Size = new System.Drawing.Size(122, 22);
+            this.randomToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
             this.randomToolStripMenuItem1.Text = "Random";
             this.randomToolStripMenuItem1.Click += new System.EventHandler(this.randomToolStripMenuItem1_Click);
             // 
             // bBToolStripMenuItem
             // 
             this.bBToolStripMenuItem.Name = "bBToolStripMenuItem";
-            this.bBToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
+            this.bBToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.bBToolStripMenuItem.Text = "B and B";
             this.bBToolStripMenuItem.Click += new System.EventHandler(this.bBToolStripMenuItem_Click);
             // 
             // greedyToolStripMenuItem
             // 
             this.greedyToolStripMenuItem.Name = "greedyToolStripMenuItem";
-            this.greedyToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
+            this.greedyToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.greedyToolStripMenuItem.Text = "Greedy";
             this.greedyToolStripMenuItem.Click += new System.EventHandler(this.greedyToolStripMenuItem_Click);
             // 
@@ -266,6 +268,13 @@ namespace TSP
             this.toolStripTextBox1.Size = new System.Drawing.Size(15, 25);
             this.toolStripTextBox1.Text = "--";
             // 
+            // runTesterToolStripMenuItem
+            // 
+            this.runTesterToolStripMenuItem.Name = "runTesterToolStripMenuItem";
+            this.runTesterToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.runTesterToolStripMenuItem.Text = "Run Tester";
+            this.runTesterToolStripMenuItem.Click += new System.EventHandler(this.runTesterToolStripMenuItem_Click);
+            // 
             // mainform
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -314,6 +323,7 @@ namespace TSP
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripLabel toolStripLabel5;
         private System.Windows.Forms.ToolStripTextBox toolStripTextBox1;
+        private System.Windows.Forms.ToolStripMenuItem runTesterToolStripMenuItem;
 
 
 

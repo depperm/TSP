@@ -150,33 +150,31 @@ namespace TSP
         private void dToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.reset();
-
             CityData.solveProblem();
         }
 
         private void greedyToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.reset();
-
-            CityData.greedySolve();
+            CityData.SolveByGreedy();
         }
 
         private void bBToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.reset();
-            CityData.solveBBProblem();
+            CityData.SolveByBranchAndBound();
         }
         //randomly connects cities
         private void randomToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             this.reset();
-            CityData.solveRandomProblem();
+            CityData.SolveByRandom();
         }
 
         private void yourTSPToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             this.reset();
-            CityData.solveByPopularityAnd2opt();
+            CityData.SolveByPopAnd2Opt();
         }
 
         private void AlgorithmMenu2_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
@@ -195,6 +193,12 @@ namespace TSP
             {
                 AlgorithmMenu2.ShowDropDown();
             }
+        }
+
+        private void runTesterToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.reset();
+            CityData.runTester();
         }
     }
 }
