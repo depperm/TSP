@@ -175,8 +175,8 @@ namespace TSP
 
         private void yourTSPToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            // TODO: Add a hook into your own implementation here.
-            throw new NotImplementedException();
+            this.reset();
+            CityData.solveByPopularityAnd2opt();
         }
 
         private void AlgorithmMenu2_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
