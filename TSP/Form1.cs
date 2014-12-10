@@ -174,7 +174,7 @@ namespace TSP
         private void yourTSPToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             this.reset();
-            CityData.SolveByPopAnd2Opt();
+            CityData.SolveByPopAnd2Op();
         }
 
         private void AlgorithmMenu2_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
@@ -197,8 +197,10 @@ namespace TSP
 
         private void runTesterToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            AlgorithmMenu2.Enabled = false;
             this.reset();
-            CityData.runTester();
+            CityData.RunTester();
+            AlgorithmMenu2.Enabled = true;
         }
     }
 }

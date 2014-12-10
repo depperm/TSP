@@ -1,9 +1,10 @@
 using System;
-using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
+using System.Text;
 using System.Timers;
 
 namespace TSP
@@ -966,7 +967,7 @@ namespace TSP
 
         #endregion
 
-        #region Popularity -> 2-opt
+        #region Popularity -> 2-op
         // not narcississtic to me, makes it pretty and organized :)
 
         // integer greedy measure
@@ -1236,7 +1237,7 @@ namespace TSP
 
 
         // Popularity -> 2-opt TSP solver
-        private TSPSolution solveByPopularityAnd2opt()
+        private TSPSolution solveByPopularityAnd2op()
         {
             double timeLimit = 10 * 60 * 1000;
             //based on a sample of 20,50,100,200,300
@@ -1687,9 +1688,9 @@ namespace TSP
         /// <summary>
         ///  Public Method the GUI can use to access the method
         /// </summary>
-        public void SolveByPopAnd2Opt()
+        public void SolveByPopAnd2Op()
         {
-            TSPSolution solution = solveByPopularityAnd2opt();
+            TSPSolution solution = solveByPopularityAnd2op();
 
             // update the cost of the tour. 
             Program.MainForm.tbCostOfTour.Text = " " + solution.costOfRoute();
@@ -1701,10 +1702,183 @@ namespace TSP
 
         #region Testing Script
 
-        public void runTester()
+        public void RunTester()
+        {            
+            List<string[]> output = new List<string[]>();
+           
+            /// Add some headers !!! WARNING !!! - If you change this, the runTests() method needs to be refactored to 
+            /// reflect whatever changes you make. This means you, Sean! 
+            output.Add(new string[] { 
+                "# of Cities", 
+                "Ran. Time", 
+                "Ran. P.L.", 
+                "Greedy Time", 
+                "Greedy P.L.", 
+                "Greedy Imp.", 
+                "B&B Time", 
+                "B&B P.L.", 
+                "B&B Imp.", 
+                "Pop&2-Op Time", 
+                "Pop&2-Op P.L.", 
+                "Pop&2-Op Imp." });
+
+            /// Run the tests and add to our output
+            output.Add(runTests(5, 10, 60));
+            output.Add(runTests(10, 10, 60));
+            output.Add(runTests(15, 10, 60)); 
+            
+            string filePath = "result.csv";
+            if (!File.Exists(filePath))
+            {
+                File.Create(filePath).Close();
+            }
+            string delimiter = ",";
+            
+            int length = output.Count;
+            StringBuilder sb = new StringBuilder();
+            for (int index = 0; index < length; index++)
+            sb.AppendLine(string.Join(delimiter, output[index]));
+            File.AppendAllText(filePath, sb.ToString());
+        }
+
+        /// <summary>
+        /// Method to run each method (Random, Greedy, B&B, and Pop2Opt) 10 times with (pseudo)random seeds and then return
+        /// a string array that shows the average results. If any one method takes more than ten minutes, 
+        /// we will skip the remaining runs and call the size "TB" (too big) for that particular
+        /// method. Which will probablt be B&B, as it dies a slow, agonizing exponential death.
+        /// </summary>
+        /// <param name="numCities">Number of cities to test with</param>
+        /// <param name="numRuns">Number of runs to do for each method</param>
+        /// <param name="secondsToBreak">Number of seconds before the size is too big, and breaks method</param>
+        /// <returns>A string array, with each member aligning to the following headers: 
+        /// # of Cities, Ran. Time, Ran. P.L., Greedy Time, Greedy P.L., Greedy Imp., 
+        /// B&B Time, B&B P.L., B&B Imp., Pop&2-Op Time, Pop&2-Op P.L., Pop&2-Op Imp. 
+        /// </returns>
+        private string[] runTests(int numCities, int numRuns, int secondsToBreak)
         {
+            /// Give us some pseudorandom seeds
+            Random randomSeeder = new Random();
+            List<string> results = new List<string>();
 
+            results.Add(numCities.ToString());
 
+            /// Run Random
+            List<TSPSolution> randomSolutions = new List<TSPSolution>();
+            for (int i = 0; i < numRuns; i++)
+            {
+                this.GenerateProblem(randomSeeder.Next(), numCities, HardMode.Modes.Hard);
+                randomSolutions.Add(this.solveRandomProblem());
+                if (randomSolutions[i].TimeTaken.TotalSeconds > secondsToBreak)
+                    break;
+            }
+
+            /// Run Greedy
+            List<TSPSolution> greedySolutions = new List<TSPSolution>();
+            for (int i = 0; i < numRuns; i++)
+            {
+                this.GenerateProblem(randomSeeder.Next(), numCities, HardMode.Modes.Hard);
+                greedySolutions.Add(this.greedySolve());
+                if (greedySolutions[i].TimeTaken.TotalSeconds > secondsToBreak)
+                    break;
+            }
+
+            /// Run B&B
+            List<TSPSolution> bbSolutions = new List<TSPSolution>();
+            for (int i = 0; i < numRuns; i++)
+            {
+                this.GenerateProblem(randomSeeder.Next(), numCities, HardMode.Modes.Hard);
+                bbSolutions.Add(this.solveBBProblem());
+                if (bbSolutions[i].TimeTaken.TotalSeconds > secondsToBreak)
+                    break;
+            }
+
+            /// Run Pop&2-Op
+            List<TSPSolution> popSolutions = new List<TSPSolution>();
+            for (int i = 0; i < numRuns; i++)
+            {
+                this.GenerateProblem(randomSeeder.Next(), numCities, HardMode.Modes.Hard);
+                popSolutions.Add(this.solveByPopularityAnd2op());
+                if (popSolutions[i].TimeTaken.TotalSeconds > secondsToBreak)
+                    break;
+            }
+
+            /// Get the averages
+            Tuple<double, double> randomAverages = averageSolutions(randomSolutions, numRuns);
+            Tuple<double, double> greedyAverages = averageSolutions(greedySolutions, numRuns);
+            Tuple<double, double> bbAverages = averageSolutions(bbSolutions, numRuns);
+            Tuple<double, double> popAverages = averageSolutions(popSolutions, numRuns);
+
+            /// Put this bad boy together, first random time & PL
+            if (randomAverages.Item1 < .01)
+                results.Add(Math.Round(randomAverages.Item1, 5).ToString());
+            else
+                results.Add(Math.Round(randomAverages.Item1, 2).ToString());
+            results.Add(Math.Round(randomAverages.Item2).ToString());
+
+            /// Next, let's get a little greedy
+            if (greedyAverages.Item1 < .01)
+                results.Add(Math.Round(greedyAverages.Item1, 5).ToString());
+            else
+                results.Add(Math.Round(greedyAverages.Item1, 2).ToString());
+            results.Add(Math.Round(greedyAverages.Item2).ToString());
+            results.Add(Math.Round(((1 - (greedyAverages.Item2 / randomAverages.Item2)) * 100), 2).ToString() + "%");
+
+            /// Get a little B&B action
+            if (bbAverages.Item1 < .01)
+                results.Add(Math.Round(bbAverages.Item1, 5).ToString());
+            else
+                results.Add(Math.Round(bbAverages.Item1, 2).ToString());
+            results.Add(Math.Round(bbAverages.Item2).ToString());
+            results.Add(Math.Round(((1 - (bbAverages.Item2 / greedyAverages.Item2)) * 100), 2).ToString() + "%");
+            
+            /// Lastly, everyone wants a little pop
+            if (popAverages.Item1 < .01)
+                results.Add(Math.Round(popAverages.Item1, 5).ToString());
+            else
+                results.Add(Math.Round(popAverages.Item1, 2).ToString());
+            results.Add(Math.Round(popAverages.Item2).ToString());
+            results.Add(Math.Round(((1 - (popAverages.Item2 / greedyAverages.Item2)) * 100), 2).ToString() + "%");
+
+            /// Return the results of this bad boy
+            return results.ToArray();
+        }
+
+       /// <summary>
+       /// Gets the average Path Length and Time for the method's solutions
+       /// </summary>
+       /// <param name="solutionsIn">List of the solutions</param>
+       /// <param name="numToHave">Number that the list should contain if the method didn't time out</param>
+        /// <returns>A tuple, first item being average time, second item being average path length. These
+       /// will both be Double.PositiveInfinity is the method timed out</returns>
+        private Tuple<double, double> averageSolutions(List<TSPSolution> solutionsIn, int numToHave)
+        {
+            if (solutionsIn.Count < numToHave)
+                return new Tuple<double, double>(Double.PositiveInfinity, Double.PositiveInfinity);
+
+            double sumPL = 0;
+            double sumTime = 0;
+
+            foreach(TSPSolution s in solutionsIn)
+            {
+                sumPL += s.costOfRoute();
+                sumTime += s.TimeTaken.TotalSeconds;
+            }
+
+            return new Tuple<double, double>(sumTime / numToHave, sumPL / numToHave);
+        }
+
+        /// <summary>
+        /// make a new problem with the given size and seed
+        /// </summary>
+        /// <param name="size">number of cities</param>
+        private void GenerateProblem(int seed, int size, HardMode.Modes mode)
+        {
+            this._size = size;
+            this._mode = mode;
+            this._seed = seed;
+            rnd = new Random(seed);
+
+            resetData();
         }
 
         #endregion
