@@ -1,0 +1,7 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/TSP/bin/Debug
+/TSP/obj/Debug
+/TSP.v12.suo
