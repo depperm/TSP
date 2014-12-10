@@ -1210,6 +1210,7 @@ namespace TSP
             double dasDarkMagickFactor = (3D + (Math.Sqrt(gNNlength/1000D)));
             double lastBSSF = 0.0D;
             int failedTriesAtBSSF = 0;
+            int forgivenessFactor = 50;
 
             // calculate popularity of each city (more pop == smaller average outgoing edges)
             List<CityInfo> cityPopularities = new List<CityInfo>();
@@ -1247,11 +1248,15 @@ namespace TSP
             }
 
             // we're going to find many BSSFs, wanna save the overall
-            // best so far here (using provided variables in this. for
-            // the best so far relative to inside this loop
+            // best so far here (using provided variables in this.* for
+            // the best so far relative to inside this loop)
+            //
+            // Note that this requires this run until at least one BSSF is found, that will 
+            // prevent 2-opt receiving a null object and crashing! (though this has not 
+            // happened at least up through 1,000-city testing)
             TSPSolution overallBSSF = null;
             ArrayList overallBestRoute = new ArrayList();
-            while (failedTriesAtBSSF < 50 && (clock0.ElapsedMilliseconds / 1000 < timeToMoveOn)) // can change the 50, but have found best results occur here
+            while (overallBSSF == null || (failedTriesAtBSSF < forgivenessFactor && (clock0.ElapsedMilliseconds / 1000 < timeToMoveOn))) 
             {
                 // first, calculate value of all edges (existing or not)
                 EdgeInfo[,] edgeScores = new EdgeInfo[Cities.Length, Cities.Length];
@@ -1439,7 +1444,7 @@ namespace TSP
                     // to see if it has a close buddy who's even shorter!
                     overallBSSF = bssf;
                     overallBestRoute = Route;
-                    //Console.WriteLine("found a better solution!");
+                    Console.WriteLine("Popularity found a better solution: {0} at: {1}",overallBSSF.costOfRoute(), clock0.Elapsed.TotalSeconds);
                     multFactor = 0.25D;
                     failedTriesAtBSSF = 0;
                 }
@@ -1500,7 +1505,7 @@ namespace TSP
             bssf = overallBSSF;
             Route = overallBestRoute;
             double costToBeat = bssf.costOfRoute();
-            Console.WriteLine("initial length: {0}", costToBeat);
+            Console.WriteLine("initial length: {0} at time: {1}", costToBeat, clock0.Elapsed.TotalSeconds);
 
             // keep doing 2-opt over and over until it has no effect!
             bool changesMade = true;
@@ -1512,27 +1517,66 @@ namespace TSP
                 // for each valid starting point of a reversible segment...
                 for (int i = 0; i < Route.Count; i++)
                 {
+                    double currSeqCost = 0.0D;
+                    double revSeqCost = 0.0D;
+
                     // for each valid ending point of a reversible segment...
                     for (int j = i + 3; j < Route.Count + i; j++)
                     {
-                        // find the cost of original sequence versus cost of reversed
-                        double currSeqCost = 0.0D;
-                        for (int k = i; k < j; k++)
+                        // cut off 2-opt if it surpasses the 10min mark
+                        // added here since at 500 cities, the outer while loop
+                        // takes roughly 80 seconds to run, too much overshot of
+                        // the "reasonable time" mark!
+                        if (clock0.ElapsedMilliseconds > timeLimit)
                         {
-                            currSeqCost += (Route[(k % Route.Count)] as City).costToGetTo((Route[(k + 1) % Route.Count] as City));
+                            i = Route.Count;
+                            changesMade = false;
+                            break;
+                        }
+
+                        // find the cost of original sequence versus cost of reversed
+                        // if a effective swap wasn't found last time, then the addition of the edges
+                        // were cached, and we can just add to them!
+                        if (currSeqCost == 0D)
+                        {
+                            for (int k = i; k < j; k++)
+                            {
+                                currSeqCost += (Route[(k % Route.Count)] as City).costToGetTo((Route[(k + 1) % Route.Count] as City));
+                            }
+                        }
+                        else
+                        {
+                            currSeqCost += (Route[((j - 1) % Route.Count)] as City).costToGetTo((Route[(j % Route.Count)]) as City);
                         }
 
                         // note that finding cost of reversed sequence is a little harder
                         // C# may provide some safety with addition of PositiveInfinity, 
                         // but I wasn't willing to risk it (obviously, look at this mess!)
-                        double revSeqCost = (Route[i] as City).costToGetTo((Route[(j - 1) % Route.Count] as City));
-                        for (int k = j - 1; k > i + 1; k--)
+                        // Again, results were cached from unsuccessful reversals
+                        if (revSeqCost == 0D)
                         {
-                            revSeqCost += (Route[k % Route.Count] as City).costToGetTo((Route[(k - 1) % Route.Count] as City));
-                            if (revSeqCost == double.PositiveInfinity)
-                                break;
+                            revSeqCost = (Route[i] as City).costToGetTo((Route[(j - 1) % Route.Count] as City));
+                            for (int k = j - 1; k > i + 1; k--)
+                            {
+                                revSeqCost += (Route[k % Route.Count] as City).costToGetTo((Route[(k - 1) % Route.Count] as City));
+                                if (revSeqCost == double.PositiveInfinity)
+                                    break;
+                            }
+                            revSeqCost += (Route[(i + 1) % Route.Count] as City).costToGetTo((Route[(j % Route.Count)] as City));
                         }
-                        revSeqCost += (Route[(i + 1) % Route.Count] as City).costToGetTo((Route[(j % Route.Count)] as City));
+                        else
+                        {
+                            // remove the old edges connecting the subsequence to the rest of the route
+                            revSeqCost -= (Route[(i + 1) % Route.Count] as City).costToGetTo((Route[((j-1) % Route.Count)] as City)); 
+                            revSeqCost -= (Route[i] as City).costToGetTo((Route[(j - 2) % Route.Count] as City)); 
+
+                            // add the new edges replacing ^those, connecting the subsequence to the rest of the route
+                            revSeqCost += (Route[(i + 1) % Route.Count] as City).costToGetTo((Route[(j % Route.Count)] as City));
+                            revSeqCost += (Route[i] as City).costToGetTo((Route[(j - 1) % Route.Count] as City));
+
+                            // add the new "backward" edge for the new node added to the subsequence
+                            revSeqCost += (Route[(j-1) % Route.Count] as City).costToGetTo((Route[(j-2) % Route.Count] as City)); 
+                        }
 
                         // if the cost of the reversal is less than the original subsequence, 
                         // then we'll reverse it and calculate a new BSSF!
@@ -1545,6 +1589,9 @@ namespace TSP
                                 bssf = new TSPSolution(Route);
                                 costToBeat = bssf.costOfRoute();
                                 changesMade = true; // since we improved, 2-opt has to run at least once more
+                                currSeqCost = 0D;
+                                revSeqCost = 0D;
+                                //Console.WriteLine("2-opt improved to: {0}", costToBeat);
                             }
                         }//cycle reverse
                         else if (revSeqCost < currSeqCost && revSeqCost != Double.PositiveInfinity && j > Route.Count)
@@ -1566,17 +1613,17 @@ namespace TSP
                                 bssf = new TSPSolution(Route);
                                 costToBeat = bssf.costOfRoute();
                                 changesMade = true;
+                                currSeqCost = 0D;
+                                revSeqCost = 0D;
+                                //Console.WriteLine("2-opt improved to: {0}", costToBeat);
                             }
                         }
-                        //Console.WriteLine("2-opt improved to: {0}", costToBeat);
+                        
                     }
                 }
             }
 
             clock0.Stop();
-            //Console.WriteLine("Greedy+Priority:" + priorityTime / 1000);
-            //Console.WriteLine("2 opt time:" + (clock0.ElapsedMilliseconds - priorityTime) / 1000);
-            //Console.WriteLine("total time:" + clock0.ElapsedMilliseconds / 1000);
             
             // update the cost of the tour. 
             Program.MainForm.tbCostOfTour.Text = " " + bssf.costOfRoute();
