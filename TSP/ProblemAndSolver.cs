@@ -1184,7 +1184,7 @@ namespace TSP
         {
             //based on a sample of 20,50,100,200,300
             //.5 is a bit larger than necessary to cover varying time(could probably work with .25)
-            double timeToMoveOn = .000113*(Math.Pow(Cities.Length, 2)) + .0034 * Cities.Length + .5;
+            double timeToMoveOn = 200D;// .000113 * (Math.Pow(Cities.Length, 2)) + .0034 * Cities.Length + .5;
             double timeLimit = 10 * 60 * 1000;
             Stopwatch clock0 = Stopwatch.StartNew(); //total func time
 
@@ -1250,7 +1250,7 @@ namespace TSP
             // the best so far relative to inside this loop
             TSPSolution overallBSSF = null;
             ArrayList overallBestRoute = new ArrayList();
-            while (failedTriesAtBSSF < 50 || (clock0.ElapsedMilliseconds / 1000 < timeToMoveOn)) // can change the 50, but have found best results occur here
+            while (failedTriesAtBSSF < 50 && (clock0.ElapsedMilliseconds / 1000 < timeToMoveOn)) // can change the 50, but have found best results occur here
             {
                 // first, calculate value of all edges (existing or not)
                 EdgeInfo[,] edgeScores = new EdgeInfo[Cities.Length, Cities.Length];
@@ -1265,7 +1265,7 @@ namespace TSP
                             // on the actual results, since non-existant edges are pruned
                             // at path finding time. However, performance gains might be had
                             // by defaulting this score to inf instead of zero ???
-                            edgeScores[i, j] = new EdgeInfo(i, j, Double.PositiveInfinity, 0);
+                            edgeScores[i, j] = new EdgeInfo(i, j, Double.PositiveInfinity, Double.PositiveInfinity);
                         }
                         else
                         {
@@ -1305,7 +1305,7 @@ namespace TSP
                 int firstCitySeed = -1;
                 int firstCity = firstCitySeed;
                 int finalCity = 0;
-                while (path.Count < Cities.Length - 1 || (clock0.ElapsedMilliseconds / 1000 < timeToMoveOn))
+                while (path.Count < Cities.Length - 1)
                 {
                     // if this loop runs more than once, it was because the
                     // last starting city ended in a dead end somewhere
@@ -1325,11 +1325,11 @@ namespace TSP
                     finalCity = 0;
                     visitCounts[0] = 1;
 
-                    while (path.Count < (Cities.Length - 1) || (clock0.ElapsedMilliseconds / 1000 < timeToMoveOn))
+                    while (path.Count < (Cities.Length - 1))
                     {
                         bool deadEndFound = true;
-                        EdgeInfo[] currNodeEdges = edgesByNode[currCity];
-                        for (int k = 0; k < currNodeEdges.Length; k++)
+                        List<EdgeInfo> currNodeEdges = new List<EdgeInfo>(edgesByNode[currCity]);
+                        for (int k = 0; k < currNodeEdges.Count; k++)
                         {
                             if (currNodeEdges[k].nodeA == currCity)
                             {
@@ -1345,20 +1345,20 @@ namespace TSP
                                     break;
                                 }
                             }
-                            else //if (currNodeEdges[k].nodeB == currCity), which is already implied
-                            {
-                                if (visitCounts[currNodeEdges[k].nodeA] == 0 && edgeScores[currNodeEdges[k].nodeB, currNodeEdges[k].nodeA].distance != Double.PositiveInfinity)
-                                {
-                                    nextCity = currNodeEdges[k].nodeA;
+                            //else //if (currNodeEdges[k].nodeB == currCity), which is already implied
+                            //{
+                            //    if (visitCounts[currNodeEdges[k].nodeA] == 0 && edgeScores[currNodeEdges[k].nodeB, currNodeEdges[k].nodeA].distance != Double.PositiveInfinity)
+                            //    {
+                            //        nextCity = currNodeEdges[k].nodeA;
 
-                                    visitCounts[nextCity] = 1;
-                                    path.Add(currNodeEdges[k]);
-                                    currCity = nextCity;
-                                    finalCity = nextCity;
-                                    deadEndFound = false;
-                                    break;
-                                }
-                            }
+                            //        visitCounts[nextCity] = 1;
+                            //        path.Add(currNodeEdges[k]);
+                            //        currCity = nextCity;
+                            //        finalCity = nextCity;
+                            //        deadEndFound = false;
+                            //        break;
+                            //    }
+                            //}
                         }
 
                         if (deadEndFound)
@@ -1429,7 +1429,7 @@ namespace TSP
                 // its performance against the previous run and determine what ratio
                 // to use in the next popularity calculation.
 
-                //Console.WriteLine("dark magick factor: {0}, length found: {1}", dasDarkMagickFactor,costForDebug);
+                //Console.WriteLine("dark magick factor: {0}, length found: {1}", dasDarkMagickFactor,bssf.costOfRoute());
                 if (overallBSSF == null || overallBSSF.costOfRoute() > bssf.costOfRoute())
                 {
                     // A new best route was found!
@@ -1499,12 +1499,12 @@ namespace TSP
             bssf = overallBSSF;
             Route = overallBestRoute;
             double costToBeat = bssf.costOfRoute();
-            //Console.WriteLine("initial length: {0}", costToBeat);
+            Console.WriteLine("initial length: {0}", costToBeat);
 
-            // keep doign 2-opt over and over until it has no effect!
+            // keep doing 2-opt over and over until it has no effect!
             bool changesMade = true;
             TSPSolution tempBssf = bssf;
-            while (changesMade || clock0.ElapsedMilliseconds < timeLimit)
+            while (changesMade && clock0.ElapsedMilliseconds < timeLimit)
             {
                 changesMade = false;
 
