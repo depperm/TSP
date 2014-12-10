@@ -1185,17 +1185,12 @@ namespace TSP
             double timeLimit = 10 * 60 * 1000;
             //based on a sample of 20,50,100,200,300
             //.5 is a bit larger than necessary to cover varying time(could probably work with .25)
-<<<<<<< HEAD
             double timeToMoveOn = .000113*(Math.Pow(Cities.Length, 2)) + .0034 * Cities.Length + .5;
             //if timeToMoveOn greater then 10 minutes
             if (timeToMoveOn > 600)
             {
                 timeToMoveOn = 300;
             }
-=======
-            double timeToMoveOn = 200D;// .000113 * (Math.Pow(Cities.Length, 2)) + .0034 * Cities.Length + .5;
-            double timeLimit = 10 * 60 * 1000;
->>>>>>> origin/master
             Stopwatch clock0 = Stopwatch.StartNew(); //total func time
 
             // Dark Magick factors for picking the next popularity ratio
