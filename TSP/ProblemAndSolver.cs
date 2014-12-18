@@ -715,12 +715,12 @@ namespace TSP
         /// solve the problem.  This is the entry point for the solver when the run button is clicked
         /// right now it just picks a simple solution. 
         /// </summary>
-        private TSPSolution solveBBProblem()
+        private TSPSolution solveBBProblem(int secondsToRun)
         {
          
             /// Get our timer and stopwatch ready
             bool intervalExceeded = false;
-            Timer timer = new Timer(10 * 60 * 1000); //Minutes * 60 Seconds * 1000 Milliseconds
+            Timer timer = new Timer(secondsToRun * 1000); //Minutes * 60 Seconds * 1000 Milliseconds
             ElapsedEventHandler handler = (sender, e) => { intervalExceeded = true; };
             timer.Elapsed += handler;
             Stopwatch stopwatch = new Stopwatch();
@@ -956,7 +956,7 @@ namespace TSP
         /// </summary>
         public void SolveByBranchAndBound()
         {
-            TSPSolution solution = solveBBProblem();
+            TSPSolution solution = solveBBProblem(30);
 
             // update the cost of the tour. 
             Program.MainForm.tbCostOfTour.Text = " " + solution.costOfRoute();
@@ -1704,6 +1704,7 @@ namespace TSP
 
         public void RunTester()
         {            
+            Console.Out.WriteLine("Beginning Tests: " + DateTime.Now.ToShortTimeString());
             List<string[]> output = new List<string[]>();
            
             /// Add some headers !!! WARNING !!! - If you change this, the runTests() method needs to be refactored to 
@@ -1722,23 +1723,32 @@ namespace TSP
                 "Pop&2-Op P.L.", 
                 "Pop&2-Op Imp." });
 
-            /// Run the tests and add to our output
-            output.Add(runTests(5, 10, 60));
-            output.Add(runTests(10, 10, 60));
-            output.Add(runTests(15, 10, 60)); 
-            
             string filePath = "result.csv";
-            if (!File.Exists(filePath))
-            {
-                File.Create(filePath).Close();
-            }
             string delimiter = ",";
-            
-            int length = output.Count;
+
             StringBuilder sb = new StringBuilder();
-            for (int index = 0; index < length; index++)
-            sb.AppendLine(string.Join(delimiter, output[index]));
+            sb.AppendLine(string.Join(delimiter, output[0]));
             File.AppendAllText(filePath, sb.ToString());
+
+            /// Run the tests and add to our output
+            int secondsToBreak = Convert.ToInt32(Program.MainForm.tbSecondsVal.Text);
+        
+            bool enableBAndB = Program.MainForm.cbEnableBB.Checked;
+            int numRuns = Convert.ToInt32(Program.MainForm.tbIterations.Text);
+            int startValue = Convert.ToInt32(Program.MainForm.tbStartVal.Text);
+            int endValue = Convert.ToInt32(Program.MainForm.tbEndVal.Text);
+            int stepValue = Convert.ToInt32(Program.MainForm.tbStepVal.Text);
+
+            while(startValue < endValue + 1)
+            {
+                output.Add(runTests(startValue, numRuns, secondsToBreak, enableBAndB));
+                sb = new StringBuilder();
+                sb.AppendLine(string.Join(delimiter, output[output.Count - 1]));
+                File.AppendAllText(filePath, sb.ToString());
+                startValue += stepValue;
+            }
+            
+            Console.Out.WriteLine("Finished Tests: " + DateTime.Now.ToShortTimeString());
         }
 
         /// <summary>
@@ -1750,11 +1760,12 @@ namespace TSP
         /// <param name="numCities">Number of cities to test with</param>
         /// <param name="numRuns">Number of runs to do for each method</param>
         /// <param name="secondsToBreak">Number of seconds before the size is too big, and breaks method</param>
+        /// <param name="isBAndBDeadYet">If we've already killed B&B, don't beat the dead horse</param>
         /// <returns>A string array, with each member aligning to the following headers: 
         /// # of Cities, Ran. Time, Ran. P.L., Greedy Time, Greedy P.L., Greedy Imp., 
         /// B&B Time, B&B P.L., B&B Imp., Pop&2-Op Time, Pop&2-Op P.L., Pop&2-Op Imp. 
         /// </returns>
-        private string[] runTests(int numCities, int numRuns, int secondsToBreak)
+        private string[] runTests(int numCities, int numRuns, int secondsToBreak, bool enableBAndB)
         {
             /// Give us some pseudorandom seeds
             Random randomSeeder = new Random();
@@ -1766,7 +1777,9 @@ namespace TSP
             List<TSPSolution> randomSolutions = new List<TSPSolution>();
             for (int i = 0; i < numRuns; i++)
             {
-                this.GenerateProblem(randomSeeder.Next(), numCities, HardMode.Modes.Hard);
+                int seed = randomSeeder.Next();
+                this.GenerateProblem(seed, numCities, HardMode.Modes.Hard);
+                Console.Out.WriteLine("Running Random: Cities = " + numCities.ToString() + ", Seed = " + seed.ToString() + ", Time = " + DateTime.Now.ToLongTimeString());
                 randomSolutions.Add(this.solveRandomProblem());
                 if (randomSolutions[i].TimeTaken.TotalSeconds > secondsToBreak)
                     break;
@@ -1776,7 +1789,9 @@ namespace TSP
             List<TSPSolution> greedySolutions = new List<TSPSolution>();
             for (int i = 0; i < numRuns; i++)
             {
-                this.GenerateProblem(randomSeeder.Next(), numCities, HardMode.Modes.Hard);
+                int seed = randomSeeder.Next();
+                this.GenerateProblem(seed, numCities, HardMode.Modes.Hard);
+                Console.Out.WriteLine("Running Greedy: Cities = " + numCities.ToString() + ", Seed = " + seed.ToString() + ", Time = " + DateTime.Now.ToLongTimeString());
                 greedySolutions.Add(this.greedySolve());
                 if (greedySolutions[i].TimeTaken.TotalSeconds > secondsToBreak)
                     break;
@@ -1784,19 +1799,26 @@ namespace TSP
 
             /// Run B&B
             List<TSPSolution> bbSolutions = new List<TSPSolution>();
-            for (int i = 0; i < numRuns; i++)
+            if (enableBAndB)
             {
-                this.GenerateProblem(randomSeeder.Next(), numCities, HardMode.Modes.Hard);
-                bbSolutions.Add(this.solveBBProblem());
-                if (bbSolutions[i].TimeTaken.TotalSeconds > secondsToBreak)
-                    break;
+                for (int i = 0; i < numRuns; i++)
+                {
+                    int seed = randomSeeder.Next();
+                    this.GenerateProblem(seed, numCities, HardMode.Modes.Hard);
+                    Console.Out.WriteLine("Running B & Bound: Cities = " + numCities.ToString() + ", Seed = " + seed.ToString() + ", Time = " + DateTime.Now.ToLongTimeString());
+                    bbSolutions.Add(this.solveBBProblem(secondsToBreak));
+                    if (bbSolutions[i].TimeTaken.TotalSeconds > secondsToBreak)
+                        break;
+                }
             }
-
+            
             /// Run Pop&2-Op
             List<TSPSolution> popSolutions = new List<TSPSolution>();
             for (int i = 0; i < numRuns; i++)
             {
-                this.GenerateProblem(randomSeeder.Next(), numCities, HardMode.Modes.Hard);
+                int seed = randomSeeder.Next();
+                this.GenerateProblem(seed, numCities, HardMode.Modes.Hard);
+                Console.Out.WriteLine("Running Pop & 2-Op: Cities = " + numCities.ToString() + ", Seed = " + seed.ToString() + ", Time = " + DateTime.Now.ToLongTimeString());
                 popSolutions.Add(this.solveByPopularityAnd2op());
                 if (popSolutions[i].TimeTaken.TotalSeconds > secondsToBreak)
                     break;
@@ -1820,24 +1842,44 @@ namespace TSP
                 results.Add(Math.Round(greedyAverages.Item1, 5).ToString());
             else
                 results.Add(Math.Round(greedyAverages.Item1, 2).ToString());
+
             results.Add(Math.Round(greedyAverages.Item2).ToString());
             results.Add(Math.Round(((1 - (greedyAverages.Item2 / randomAverages.Item2)) * 100), 2).ToString() + "%");
-
-            /// Get a little B&B action
-            if (bbAverages.Item1 < .01)
-                results.Add(Math.Round(bbAverages.Item1, 5).ToString());
-            else
-                results.Add(Math.Round(bbAverages.Item1, 2).ToString());
-            results.Add(Math.Round(bbAverages.Item2).ToString());
-            results.Add(Math.Round(((1 - (bbAverages.Item2 / greedyAverages.Item2)) * 100), 2).ToString() + "%");
             
-            /// Lastly, everyone wants a little pop
-            if (popAverages.Item1 < .01)
-                results.Add(Math.Round(popAverages.Item1, 5).ToString());
+            /// Get a little B&B action
+            if (bbAverages.Item1 == Double.PositiveInfinity || bbAverages.Item2 == Double.PositiveInfinity)
+            {
+                results.Add("TB");
+                results.Add("TB");
+                results.Add("TB");
+            }
             else
-                results.Add(Math.Round(popAverages.Item1, 2).ToString());
-            results.Add(Math.Round(popAverages.Item2).ToString());
-            results.Add(Math.Round(((1 - (popAverages.Item2 / greedyAverages.Item2)) * 100), 2).ToString() + "%");
+            {
+                if (bbAverages.Item1 < .01)
+                    results.Add(Math.Round(bbAverages.Item1, 5).ToString());
+                else
+                    results.Add(Math.Round(bbAverages.Item1, 2).ToString());
+                results.Add(Math.Round(bbAverages.Item2).ToString());
+                results.Add(Math.Round(((1 - (bbAverages.Item2 / greedyAverages.Item2)) * 100), 2).ToString() + "%");  
+            }
+
+            /// Lastly, everyone wants a little pop
+            if (popAverages.Item1 == Double.PositiveInfinity || popAverages.Item2 == Double.PositiveInfinity)
+            {
+                results.Add("TB");
+                results.Add("TB");
+                results.Add("TB");
+            }
+            else
+            {
+                if (popAverages.Item1 < .01)
+                    results.Add(Math.Round(popAverages.Item1, 5).ToString());
+                else
+                    results.Add(Math.Round(popAverages.Item1, 2).ToString());
+                results.Add(Math.Round(popAverages.Item2).ToString());
+                results.Add(Math.Round(((1 - (popAverages.Item2 / greedyAverages.Item2)) * 100), 2).ToString() + "%");
+            }
+            
 
             /// Return the results of this bad boy
             return results.ToArray();

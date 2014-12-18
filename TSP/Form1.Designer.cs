@@ -47,6 +47,7 @@ namespace TSP
             this.randomToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.bBToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.greedyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.runTesterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.newProblem = new System.Windows.Forms.ToolStripButton();
             this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
             this.tbSeed = new System.Windows.Forms.ToolStripTextBox();
@@ -54,9 +55,26 @@ namespace TSP
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripLabel5 = new System.Windows.Forms.ToolStripLabel();
             this.toolStripTextBox1 = new System.Windows.Forms.ToolStripTextBox();
-            this.runTesterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStrip3 = new System.Windows.Forms.ToolStrip();
+            this.lblStartVal = new System.Windows.Forms.ToolStripLabel();
+            this.tbStartVal = new System.Windows.Forms.ToolStripTextBox();
+            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            this.lblEndVal = new System.Windows.Forms.ToolStripLabel();
+            this.tbEndVal = new System.Windows.Forms.ToolStripTextBox();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.lblStepVal = new System.Windows.Forms.ToolStripLabel();
+            this.tbSecondsVal = new System.Windows.Forms.ToolStripTextBox();
+            this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
+            this.cbEnableBB = new System.Windows.Forms.CheckBox();
+            this.toolStripLabel6 = new System.Windows.Forms.ToolStripLabel();
+            this.tbStepVal = new System.Windows.Forms.ToolStripTextBox();
+            this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripLabel7 = new System.Windows.Forms.ToolStripLabel();
+            this.tbIterations = new System.Windows.Forms.ToolStripTextBox();
+            this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStrip1.SuspendLayout();
             this.toolStrip2.SuspendLayout();
+            this.toolStrip3.SuspendLayout();
             this.SuspendLayout();
             // 
             // toolStrip1
@@ -73,9 +91,9 @@ namespace TSP
             this.toolStripSeparator4,
             this.toolStripLabel4,
             this.tbElapsedTime});
-            this.toolStrip1.Location = new System.Drawing.Point(0, 587);
+            this.toolStrip1.Location = new System.Drawing.Point(0, 559);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(634, 25);
+            this.toolStrip1.Size = new System.Drawing.Size(687, 25);
             this.toolStrip1.TabIndex = 0;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -160,9 +178,9 @@ namespace TSP
             this.toolStripSeparator1,
             this.toolStripLabel5,
             this.toolStripTextBox1});
-            this.toolStrip2.Location = new System.Drawing.Point(0, 562);
+            this.toolStrip2.Location = new System.Drawing.Point(0, 534);
             this.toolStrip2.Name = "toolStrip2";
-            this.toolStrip2.Size = new System.Drawing.Size(634, 25);
+            this.toolStrip2.Size = new System.Drawing.Size(687, 25);
             this.toolStrip2.TabIndex = 1;
             this.toolStrip2.Text = "toolStrip2";
             // 
@@ -187,37 +205,44 @@ namespace TSP
             // dToolStripMenuItem
             // 
             this.dToolStripMenuItem.Name = "dToolStripMenuItem";
-            this.dToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.dToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
             this.dToolStripMenuItem.Text = "Default";
             this.dToolStripMenuItem.Click += new System.EventHandler(this.dToolStripMenuItem_Click);
             // 
             // yourTSPToolStripMenuItem1
             // 
             this.yourTSPToolStripMenuItem1.Name = "yourTSPToolStripMenuItem1";
-            this.yourTSPToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+            this.yourTSPToolStripMenuItem1.Size = new System.Drawing.Size(130, 22);
             this.yourTSPToolStripMenuItem1.Text = "Your TSP";
             this.yourTSPToolStripMenuItem1.Click += new System.EventHandler(this.yourTSPToolStripMenuItem1_Click);
             // 
             // randomToolStripMenuItem1
             // 
             this.randomToolStripMenuItem1.Name = "randomToolStripMenuItem1";
-            this.randomToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+            this.randomToolStripMenuItem1.Size = new System.Drawing.Size(130, 22);
             this.randomToolStripMenuItem1.Text = "Random";
             this.randomToolStripMenuItem1.Click += new System.EventHandler(this.randomToolStripMenuItem1_Click);
             // 
             // bBToolStripMenuItem
             // 
             this.bBToolStripMenuItem.Name = "bBToolStripMenuItem";
-            this.bBToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.bBToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
             this.bBToolStripMenuItem.Text = "B and B";
             this.bBToolStripMenuItem.Click += new System.EventHandler(this.bBToolStripMenuItem_Click);
             // 
             // greedyToolStripMenuItem
             // 
             this.greedyToolStripMenuItem.Name = "greedyToolStripMenuItem";
-            this.greedyToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.greedyToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
             this.greedyToolStripMenuItem.Text = "Greedy";
             this.greedyToolStripMenuItem.Click += new System.EventHandler(this.greedyToolStripMenuItem_Click);
+            // 
+            // runTesterToolStripMenuItem
+            // 
+            this.runTesterToolStripMenuItem.Name = "runTesterToolStripMenuItem";
+            this.runTesterToolStripMenuItem.Size = new System.Drawing.Size(130, 22);
+            this.runTesterToolStripMenuItem.Text = "Run Tester";
+            this.runTesterToolStripMenuItem.Click += new System.EventHandler(this.runTesterToolStripMenuItem_Click);
             // 
             // newProblem
             // 
@@ -268,20 +293,141 @@ namespace TSP
             this.toolStripTextBox1.Size = new System.Drawing.Size(15, 25);
             this.toolStripTextBox1.Text = "--";
             // 
-            // runTesterToolStripMenuItem
+            // toolStrip3
             // 
-            this.runTesterToolStripMenuItem.Name = "runTesterToolStripMenuItem";
-            this.runTesterToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.runTesterToolStripMenuItem.Text = "Run Tester";
-            this.runTesterToolStripMenuItem.Click += new System.EventHandler(this.runTesterToolStripMenuItem_Click);
+            this.toolStrip3.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.toolStrip3.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.lblStartVal,
+            this.tbStartVal,
+            this.toolStripSeparator2,
+            this.lblEndVal,
+            this.tbEndVal,
+            this.toolStripSeparator3,
+            this.toolStripLabel6,
+            this.tbStepVal,
+            this.toolStripSeparator8,
+            this.lblStepVal,
+            this.tbSecondsVal,
+            this.toolStripSeparator7,
+            this.toolStripLabel7,
+            this.tbIterations,
+            this.toolStripSeparator9});
+            this.toolStrip3.Location = new System.Drawing.Point(0, 584);
+            this.toolStrip3.Name = "toolStrip3";
+            this.toolStrip3.Size = new System.Drawing.Size(687, 25);
+            this.toolStrip3.TabIndex = 2;
+            this.toolStrip3.Text = "toolStrip3";
+            // 
+            // lblStartVal
+            // 
+            this.lblStartVal.Name = "lblStartVal";
+            this.lblStartVal.Size = new System.Drawing.Size(63, 22);
+            this.lblStartVal.Text = "Start Value";
+            // 
+            // tbStartVal
+            // 
+            this.tbStartVal.Name = "tbStartVal";
+            this.tbStartVal.Size = new System.Drawing.Size(50, 25);
+            this.tbStartVal.Text = "5";
+            this.tbStartVal.TextBoxTextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // toolStripSeparator2
+            // 
+            this.toolStripSeparator2.Name = "toolStripSeparator2";
+            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
+            // 
+            // lblEndVal
+            // 
+            this.lblEndVal.Name = "lblEndVal";
+            this.lblEndVal.Size = new System.Drawing.Size(59, 22);
+            this.lblEndVal.Text = "End Value";
+            // 
+            // tbEndVal
+            // 
+            this.tbEndVal.Name = "tbEndVal";
+            this.tbEndVal.Size = new System.Drawing.Size(50, 25);
+            this.tbEndVal.Text = "20";
+            this.tbEndVal.TextBoxTextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(6, 25);
+            // 
+            // lblStepVal
+            // 
+            this.lblStepVal.Name = "lblStepVal";
+            this.lblStepVal.Size = new System.Drawing.Size(51, 22);
+            this.lblStepVal.Text = "Seconds";
+            // 
+            // tbSecondsVal
+            // 
+            this.tbSecondsVal.Name = "tbSecondsVal";
+            this.tbSecondsVal.Size = new System.Drawing.Size(50, 25);
+            this.tbSecondsVal.Text = "30";
+            this.tbSecondsVal.TextBoxTextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // toolStripSeparator7
+            // 
+            this.toolStripSeparator7.Name = "toolStripSeparator7";
+            this.toolStripSeparator7.Size = new System.Drawing.Size(6, 25);
+            // 
+            // cbEnableBB
+            // 
+            this.cbEnableBB.AutoSize = true;
+            this.cbEnableBB.Location = new System.Drawing.Point(554, 587);
+            this.cbEnableBB.Name = "cbEnableBB";
+            this.cbEnableBB.Size = new System.Drawing.Size(100, 17);
+            this.cbEnableBB.TabIndex = 4;
+            this.cbEnableBB.Text = "Enable B and B";
+            this.cbEnableBB.UseVisualStyleBackColor = true;
+            this.cbEnableBB.UseWaitCursor = true;
+            // 
+            // toolStripLabel6
+            // 
+            this.toolStripLabel6.Name = "toolStripLabel6";
+            this.toolStripLabel6.Size = new System.Drawing.Size(30, 22);
+            this.toolStripLabel6.Text = "Step";
+            // 
+            // tbStepVal
+            // 
+            this.tbStepVal.Name = "tbStepVal";
+            this.tbStepVal.Size = new System.Drawing.Size(35, 25);
+            this.tbStepVal.Text = "5";
+            this.tbStepVal.TextBoxTextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // toolStripSeparator8
+            // 
+            this.toolStripSeparator8.Name = "toolStripSeparator8";
+            this.toolStripSeparator8.Size = new System.Drawing.Size(6, 25);
+            // 
+            // toolStripLabel7
+            // 
+            this.toolStripLabel7.Name = "toolStripLabel7";
+            this.toolStripLabel7.Size = new System.Drawing.Size(56, 22);
+            this.toolStripLabel7.Text = "Iterations";
+            // 
+            // tbIterations
+            // 
+            this.tbIterations.Name = "tbIterations";
+            this.tbIterations.Size = new System.Drawing.Size(50, 25);
+            this.tbIterations.Text = "30";
+            this.tbIterations.TextBoxTextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // toolStripSeparator9
+            // 
+            this.toolStripSeparator9.Name = "toolStripSeparator9";
+            this.toolStripSeparator9.Size = new System.Drawing.Size(6, 25);
             // 
             // mainform
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(634, 612);
+            this.ClientSize = new System.Drawing.Size(687, 609);
+            this.Controls.Add(this.cbEnableBB);
             this.Controls.Add(this.toolStrip2);
             this.Controls.Add(this.toolStrip1);
+            this.Controls.Add(this.toolStrip3);
             this.Name = "mainform";
             this.Text = "Traveling Sales Person";
             this.Load += new System.EventHandler(this.Form1_Load);
@@ -291,6 +437,8 @@ namespace TSP
             this.toolStrip1.PerformLayout();
             this.toolStrip2.ResumeLayout(false);
             this.toolStrip2.PerformLayout();
+            this.toolStrip3.ResumeLayout(false);
+            this.toolStrip3.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -324,6 +472,23 @@ namespace TSP
         private System.Windows.Forms.ToolStripLabel toolStripLabel5;
         private System.Windows.Forms.ToolStripTextBox toolStripTextBox1;
         private System.Windows.Forms.ToolStripMenuItem runTesterToolStripMenuItem;
+        private System.Windows.Forms.ToolStrip toolStrip3;
+        private System.Windows.Forms.ToolStripLabel lblStartVal;
+        public System.Windows.Forms.ToolStripTextBox tbStartVal;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+        private System.Windows.Forms.ToolStripLabel lblEndVal;
+        public System.Windows.Forms.ToolStripTextBox tbEndVal;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        private System.Windows.Forms.ToolStripLabel lblStepVal;
+        public System.Windows.Forms.ToolStripTextBox tbSecondsVal;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
+        public System.Windows.Forms.CheckBox cbEnableBB;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel6;
+        public System.Windows.Forms.ToolStripTextBox tbStepVal;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel7;
+        public System.Windows.Forms.ToolStripTextBox tbIterations;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
 
 
 
