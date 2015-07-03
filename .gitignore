@@ -3,5 +3,9 @@
 ################################################################################
 
 /TSP/bin/Debug
+/TSP/bin
 /TSP/obj/Debug
+/TSP/obj
+/TSP/publish
 /TSP.v12.suo
+*.user
